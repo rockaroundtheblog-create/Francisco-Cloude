@@ -1,6 +1,6 @@
 # Atualiza 45recordsauction.com todos os dias e publica no GitHub Pages.
 # As chaves ficam em Settings > Secrets and variables > Actions (nunca no repositorio).
-# Sem as chaves do eBay, publica a pagina que esta em publicar/index.html.
+# Sem as chaves do eBay, publica o index.html que esta no repositorio.
 name: Atualizar 45recordsauction.com
 
 on:
@@ -41,23 +41,30 @@ jobs:
             "EBAY_APP_ID=$env:EBAY_APP_ID", "EBAY_CERT_ID=$env:EBAY_CERT_ID", "EBAY_DEV_ID=$env:EBAY_DEV_ID",
             "EBAY_USER_TOKEN=$env:EBAY_USER_TOKEN", "DISCOGS_TOKEN=$env:DISCOGS_TOKEN"
           ) | Set-Content -Path chaves.env -Encoding ascii
-          .\leiloes.ps1 -Saida publicar\index.html
+          .\leiloes.ps1 -Saida index.html
           Remove-Item chaves.env
 
-      - name: Guardar o estado (novos, cache do Discogs)
+      - name: Guardar o estado (novos, cache do Discogs, pagina)
         shell: bash
         run: |
           git config user.name "45recordsauction-bot"
           git config user.email "actions@users.noreply.github.com"
-          for f in vistos.json discogs-cache.json lista-observados.json publicar/index.html; do
+          for f in vistos.json discogs-cache.json lista-observados.json index.html; do
             if [ -f "$f" ]; then git add "$f"; fi
           done
           git commit -m "Atualizacao diaria" || echo "Nada para guardar"
           git push || echo "Push falhou"
 
+      - name: Preparar o site (so a pagina e o dominio)
+        shell: bash
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+          cp CNAME _site/CNAME
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: publicar
+          path: _site
       - id: deploy
         uses: actions/deploy-pages@v4
