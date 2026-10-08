@@ -1,0 +1,147 @@
+{
+    "mercados":  [
+                     "EBAY_US",
+                     "EBAY_GB",
+                     "EBAY_FR",
+                     "EBAY_DE",
+                     "EBAY_IT",
+                     "EBAY_ES"
+                 ],
+    "categoria":  "176985",
+    "maxPorTopico":  3000,
+    "horasNovo":  24,
+    "discogs":  {
+                    "ativo":  true,
+                    "maxPorExecucao":  2000,
+                    "confirmarTodos":  true
+                },
+    "verificarDescricao":  {
+                               "ativo":  true,
+                               "maxPesquisa":  1000,
+                               "maxVerificar":  300
+                           },
+    "observadores":  {
+                         "ativo":  true,
+                         "usarListaObservados":  false,
+                         "maxNaLista":  300
+                     },
+    "topicos":  [
+                    {
+                        "nome":  "Garage",
+                        "generos":  "garage",
+                        "estilosDiscogs":  [
+                                               "Garage Rock",
+                                               "Beat",
+                                               "Freakbeat"
+                                           ],
+                        "pesquisa":  "garage 45",
+                        "pesquisaPorMercado":  {
+                                                   "EBAY_DE":  "garage (45,single)",
+                                                   "EBAY_ES":  "garage (45,single)"
+                                               },
+                        "excluir":  [
+                                        "lp",
+                                        "cd",
+                                        "cassette",
+                                        "bootleg",
+                                        "shirt",
+                                        "poster",
+                                        "12\""
+                                    ]
+                    },
+                    {
+                        "nome":  "Psych",
+                        "generos":  "(psych,psychedelic)",
+                        "estilosDiscogs":  [
+                                               "Psychedelic Rock",
+                                               "Acid Rock"
+                                           ],
+                        "pesquisa":  "(psych,psychedelic) 45",
+                        "pesquisaPorMercado":  {
+                                                   "EBAY_DE":  "(psych,psychedelic) (45,single)",
+                                                   "EBAY_ES":  "(psych,psychedelic) (45,single)"
+                                               },
+                        "excluir":  [
+                                        "lp",
+                                        "cd",
+                                        "cassette",
+                                        "bootleg",
+                                        "shirt",
+                                        "poster",
+                                        "12\""
+                                    ]
+                    },
+                    {
+                        "nome":  "Rockabilly",
+                        "generos":  "(rockabilly,rock-a-billy)",
+                        "estilosDiscogs":  [
+                                               "Rockabilly",
+                                               "Rock \u0026 Roll"
+                                           ],
+                        "pesquisa":  "(rockabilly,rock-a-billy) 45",
+                        "pesquisaPorMercado":  {
+                                                   "EBAY_DE":  "(rockabilly,rock-a-billy) (45,single)",
+                                                   "EBAY_ES":  "(rockabilly,rock-a-billy) (45,single)"
+                                               },
+                        "excluir":  [
+                                        "lp",
+                                        "cd",
+                                        "cassette",
+                                        "bootleg",
+                                        "shirt",
+                                        "poster",
+                                        "12\""
+                                    ]
+                    },
+                    {
+                        "nome":  "Power Pop",
+                        "generos":  "(\"power pop\",powerpop,power-pop)",
+                        "estilosDiscogs":  [
+                                               "Power Pop"
+                                           ],
+                        "pesquisa":  "(\"power pop\",powerpop,power-pop) 45",
+                        "pesquisaPorMercado":  {
+                                                   "EBAY_DE":  "(\"power pop\",powerpop,power-pop) (45,single)",
+                                                   "EBAY_ES":  "(\"power pop\",powerpop,power-pop) (45,single)"
+                                               },
+                        "excluir":  [
+                                        "lp",
+                                        "cd",
+                                        "cassette",
+                                        "bootleg",
+                                        "shirt",
+                                        "poster",
+                                        "12\""
+                                    ]
+                    },
+                    {
+                        "nome":  "Punk",
+                        "generos":  "(punk,kbd)",
+                        "estilosDiscogs":  [
+                                               "Punk",
+                                               "Hardcore",
+                                               "Oi",
+                                               "Post-Punk"
+                                           ],
+                        "pesquisa":  "(punk,kbd) 45",
+                        "pesquisaPorMercado":  {
+                                                   "EBAY_DE":  "(punk,kbd) (45,single)",
+                                                   "EBAY_ES":  "(punk,kbd) (45,single)"
+                                               },
+                        "excluir":  [
+                                        "lp",
+                                        "cd",
+                                        "cassette",
+                                        "bootleg",
+                                        "shirt",
+                                        "t-shirt",
+                                        "poster",
+                                        "patch",
+                                        "button",
+                                        "pin",
+                                        "12\"",
+                                        "flexi"
+                                    ]
+                    }
+                ]
+}

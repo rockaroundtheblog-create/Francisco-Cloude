@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="only light">
+<title>45 Records Auction in eBay</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One+SC&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: cabeçalho, resumo, separadores, grelha de leilões; blocos creme sobre fundo preto.
+   Paleta tirada do cartaz "60's Garage": mancha castanho-negro, creme, laranja, petróleo, amarelo-pele. */
+:root{
+  --papel:#d7e5d2; --papel2:#c8dccb; --mancha:#2a1617; --mancha2:#3a2324;
+  --creme:#eef1dc; --nevoa:#b8b39d; --laranja:#e5743a; --petroleo:#1f9d98; --petroleo2:#16807c;
+  --pele:#f1e49c; --linha:#4a3334;
+  --display:"Bowlby One SC","Arial Black",Impact,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  color-scheme:dark;
+}
+html{background:#000;color-scheme:dark}
+/* O Samsung Internet mexe nas cores das páginas sem estilo próprio para o modo escuro.
+   Declarar um (com estas mesmas cores) faz com que ele as respeite. */
+@media (prefers-color-scheme:dark){html,body{background-color:#000;color:#eef1dc}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;color:var(--creme);font:15px/1.5 var(--body);
+  background-color:#000;
+  background-image:radial-gradient(rgba(238,241,220,.06) 1px,transparent 1.3px);
+  background-size:6px 6px;background-attachment:fixed}
+.wrap{max-width:1000px;margin:0 auto;padding:28px 16px 48px}
+
+/* cabeçalho */
+header{position:relative;display:flex;align-items:center;gap:18px;flex-wrap:wrap;background:#000;color:var(--creme);border:2px solid #3b3a33;
+  border-radius:28px 34px 30px 26px;padding:16px 22px;margin-bottom:22px}
+.logo{flex:none;height:124px;width:auto;max-width:100%;display:block}
+@media (max-width:560px){.logo{height:90px}}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(26px,5.4vw,42px);line-height:1;margin:0;color:var(--creme);letter-spacing:.01em}
+h1 .n{color:var(--laranja)}
+h1 .marca{font-size:31px;color:var(--petroleo);white-space:nowrap}
+@media (max-width:560px){h1 .marca{font-size:.74em}}
+h1 .sub{display:block;font-size:.42em;color:var(--laranja);letter-spacing:.06em;margin-top:6px}
+
+.banner{margin-top:14px;padding:10px 14px;border-radius:10px;background:#000;color:var(--creme);border:2px solid #3b3a33;font-size:14px;border-left:6px solid var(--pele)}
+.banner.err{border-left-color:var(--laranja);color:var(--pele)}
+#banners:not(:empty){margin:-8px 0 22px}
+.paises{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;padding-top:14px;border-top:1px solid #3b3a33}
+#tabs{margin-bottom:16px}
+.paises .rotulo{flex-basis:100%;text-align:center;font-family:var(--display);font-weight:400;font-size:18px;letter-spacing:.04em;color:var(--petroleo);margin-bottom:4px}
+.tab.pais{font-size:15px;padding:5px 14px;border-width:2px}
+.tab.pais small{font-size:13px}
+#paises{gap:10px}
+#tabs{gap:.5cm;width:100%;justify-content:center}
+.paises{justify-content:center}
+#tabs .tab{font-size:17px;padding:7px 18px}
+#tabs .tab small{font-size:14px}
+.escolha{display:flex;flex-direction:column;align-items:center;gap:16px}
+/* no ecra inicial o logo sai do cabecalho e aparece grande no convite; volta ao escolher um genero */
+.escolha .logo-grande{height:150px;width:auto;max-width:100%}
+.escolha{padding:28px 16px 40px;text-align:center;font-family:var(--display);font-size:clamp(18px,3vw,24px);color:var(--petroleo)}
+.list.vazio{border:0;background:none}
+.rodape{margin-top:36px;padding-top:14px;border-top:1px solid #3b3a33;text-align:center;font-size:12px;color:var(--nevoa)}
+
+/* etiqueta lateral com o separador escolhido (aparece quando os separadores saem do ecrã) */
+.lateral{position:fixed;top:50%;z-index:10;
+  /* encostada a esquerda da grelha (largura do conteudo: 968px) */
+  left:max(calc(env(safe-area-inset-left,0px) + 12px), calc((100vw - 968px) / 2 - 134px));
+  transform:translateY(-50%) rotate(180deg);writing-mode:vertical-rl;
+  font-family:var(--display);font-weight:400;font-size:18px;letter-spacing:.06em;
+  background:var(--petroleo);color:var(--creme);border:2px solid #000;border-radius:999px;
+  padding:18px 9px;cursor:pointer;box-shadow:0 0 0 2px var(--petroleo)}
+.lateral small{font-family:var(--body);font-weight:700;font-size:12px;color:#000;margin-top:8px}
+@media (max-width:1150px){
+  .lateral{writing-mode:horizontal-tb;transform:none;top:auto;left:calc(env(safe-area-inset-left,0px) + 12px);
+    bottom:calc(env(safe-area-inset-bottom,0px) + 14px);font-size:14px;padding:7px 14px}
+  .lateral small{margin:0 0 0 6px}
+}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:0 0 22px}
+.stat{background:#000;border:2px solid #3b3a33;border-radius:14px;padding:10px 14px}
+.stat b{display:block;font-family:var(--display);font-weight:400;font-size:30px;line-height:1.1;color:var(--laranja);font-variant-numeric:tabular-nums}
+.stat span{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--petroleo)}
+
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tab{font:inherit;font-size:14px;font-weight:600;border:2px solid var(--creme);background:transparent;color:var(--creme);border-radius:999px;padding:4px 13px;cursor:pointer}
+.tab:hover{background:rgba(238,241,220,.1)}
+.tab[aria-pressed="true"]{border-color:var(--petroleo)}
+.tab[aria-pressed="true"]{background:var(--petroleo);color:var(--creme)}
+.tab small{opacity:.85;margin-left:4px;font-variant-numeric:tabular-nums;color:var(--creme)}
+.tab[aria-pressed="false"] small{color:var(--laranja)}
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-left:auto}
+.tools label{display:flex;gap:6px;align-items:center;font-size:14px;font-weight:500;cursor:pointer;color:var(--creme)}
+.tools input[type=checkbox]{accent-color:var(--petroleo);width:15px;height:15px}
+input[type=search],select{font:inherit;font-size:14px;color:var(--creme);background:#000;border:2px solid var(--creme);border-radius:8px;padding:5px 9px}
+select option{background:#111;color:var(--creme)}
+input[type=search]{width:180px}
+input[type=search]::placeholder{color:var(--nevoa)}
+:focus-visible{outline:3px solid var(--laranja);outline-offset:2px}
+
+.view{display:inline-flex;border:2px solid var(--creme);border-radius:9px;overflow:hidden}
+.view button{font:inherit;font-size:13.5px;font-weight:600;background:transparent;color:var(--creme);border:0;padding:4px 11px;cursor:pointer}
+.view button+button{border-left:2px solid var(--creme)}
+.view button[aria-pressed="true"]{background:var(--petroleo);color:var(--creme)}
+
+/* lista */
+.list{background:#000;color:var(--creme);border:2px solid #3b3a33;border-radius:14px;overflow:hidden}
+.item{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 14px;border-top:1px solid #2c2b26}
+.item:first-child{border-top:0}
+.thumb{width:72px;height:72px;border-radius:6px;object-fit:cover;background:#1a1918;display:block}
+.ph{width:72px;height:72px;border-radius:50%;background:radial-gradient(circle,var(--creme) 0 8%,var(--laranja) 9% 32%,#120909 33% 100%)}
+.t{font-weight:500;color:var(--creme);text-decoration:none;overflow-wrap:anywhere}
+.t:hover{color:var(--pele);text-decoration:underline}
+.meta{font-size:12.5px;color:var(--nevoa);margin-top:3px;display:flex;flex-wrap:wrap;gap:4px 12px}
+.badge{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:1px 6px;border-radius:4px;margin-right:6px;vertical-align:1px}
+.badge.new{background:var(--laranja);color:var(--creme)}
+.badge.topic{background:#1a1918;color:var(--petroleo)}
+.right{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.price{font-family:var(--mono);font-weight:600;font-size:16px;color:var(--laranja)}
+.bids{font-size:12.5px;color:var(--nevoa)}
+.left{font-size:13px;font-weight:600;margin-top:2px;color:var(--petroleo)}
+.left.soon{color:var(--laranja)}
+.left.over{color:var(--nevoa);font-weight:400}
+
+/* grelha de fotos */
+.list.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;background:none;color:inherit;border:0;border-radius:0;overflow:visible}
+.card{display:flex;flex-direction:column;background:#000;color:var(--creme);border:2px solid #3b3a33;border-radius:14px;overflow:hidden;min-width:0}
+.card .photo{position:relative;display:block;aspect-ratio:1;max-width:100%;background:#1a1918;border-bottom:2px solid #3b3a33}
+.card .photo img{width:100%;height:100%;object-fit:cover;display:block}
+.card .photo .ph{width:100%;height:100%;border-radius:0}
+.card .photo:hover img{opacity:.88}
+.card .photo .badge{position:absolute;top:8px;left:8px;margin:0}
+.obs{font-size:12px;color:var(--nevoa);white-space:nowrap}
+.price .orig{font-family:var(--body);font-weight:400;font-size:11px;color:var(--nevoa)}
+.mais{grid-column:1/-1;display:flex;justify-content:center;padding:18px 0}
+.mais .tab{font-size:15px;padding:8px 20px}
+.seguidores{font-size:12px;color:var(--nevoa);margin-top:1px}
+.seguidores.tem{color:var(--pele);font-weight:600}
+.origem{font-size:12px;color:var(--nevoa);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .info{padding:9px 11px 11px;display:flex;flex-direction:column;gap:2px}
+.card .ct{font-size:12.5px;line-height:1.35;font-weight:500;color:var(--creme);text-decoration:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .ct:hover{color:var(--pele)}
+.card .row1{display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-top:4px;font-variant-numeric:tabular-nums}
+.card .price{font-size:15px}
+.card .left{margin:0;font-size:12px}
+.empty{padding:28px;text-align:center;color:#6b5f55}
+@media (max-width:560px){
+  .item{grid-template-columns:56px minmax(0,1fr);gap:10px}
+  .thumb,.ph{width:56px;height:56px}
+  .right{grid-column:2;text-align:left;display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+  .tools{margin-left:0}
+  header{padding:14px 18px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img class="logo" id="logo" src="player.gif" alt="" width="205" height="257">
+    <div>
+      <h1><span class="n">45</span> Records Auction <span class="marca">in eBay</span><span class="sub">Garage · Psych · Rockabilly · Power Pop · Punk</span></h1>
+    </div>
+  </header>
+  <div id="banners"></div>
+  <div class="tabs" id="tabs"></div>
+  <div class="paises" id="paises" hidden></div>
+  <div class="bar">
+    <div class="tools" id="ferramentas" hidden>
+      <div class="view" id="vista" role="group" aria-label="View">
+        <button type="button" data-v="fotos" aria-pressed="true">Photos</button>
+        <button type="button" data-v="lista" aria-pressed="false">List</button>
+      </div>
+      <label for="soNovos"><input type="checkbox" id="soNovos"> New only</label>
+      <label for="so24"><input type="checkbox" id="so24"> Ending within 24 h</label>      <input type="search" id="filtro" placeholder="Filter by title…" aria-label="Filter by title">
+      <select id="ordem" aria-label="Sort">
+        <option value="fim">Ending soonest</option>
+        <option value="precoDesc">Highest price</option>
+        <option value="precoAsc">Lowest price</option>
+        <option value="bids">Most bids</option>
+        <option value="obs">Most watchers</option>
+      </select>
+    </div>
+  </div>
+  <div class="list" id="list"></div>
+  <footer class="rodape">Independent listing of eBay auctions. Not affiliated with, endorsed or sponsored by eBay Inc.</footer>
+</div>
+<button type="button" id="lateral" class="lateral" hidden title="Back to the tabs"></button>
+<script>
+const D=/*DADOS*/null;
+const $=id=>document.getElementById(id);
+// a pagina abre sem genero escolhido; depois de escolher, pode filtrar-se por pais
+let topico=null, paisSel=null;
+const POR_PAGINA=60; let mostrar=POR_PAGINA;
+const fmtData=s=>new Date(s).toLocaleString("en-GB",{dateStyle:"medium",timeStyle:"short"});
+const money=(v,c)=>{try{return new Intl.NumberFormat("en-GB",{style:"currency",currency:c||"USD"}).format(v)}catch{return v+" "+c}};
+function falta(fim){
+  if(!fim)return{txt:"",cls:""};
+  const ms=new Date(fim)-Date.now();
+  if(ms<=0)return{txt:"ended",cls:"over"};
+  const m=Math.floor(ms/60000),d=Math.floor(m/1440),h=Math.floor(m%1440/60),mm=m%60;
+  const txt=d?`${d}d ${h}h`:h?`${h}h ${mm}m`:`${mm}m`;
+  return{txt:txt+" left",cls:ms<6*3600e3?"soon":""};
+}
+function todos(){
+  // um leilão pode estar em vários tópicos; em "Todos" aparece uma só vez, com os tópicos juntos.
+  // os leilões já terminados não entram (a página revê isto a cada minuto)
+  const m=new Map(),agora=Date.now();
+  for(const t of D.topicos)for(const i of t.itens){if(i.fim&&new Date(i.fim)<=agora)continue;const j=m.get(i.id);if(j){j._ts.push(t.nome);j._t=j._ts.join(" · ")}else m.set(i.id,{...i,_t:t.nome,_ts:[t.nome]})}
+  return [...m.values()];
+}
+function render(){
+  if(!D){$("list").innerHTML='<div class="empty">This page is the template. Run correr.bat to build leiloes.html.</div>';return}
+  const all=todos(),agora=Date.now();
+  let b="";
+  if(D.demo)b+='<div class="banner">Demo data. The auctions below are made up to show how the page looks, so the links open a search. With the eBay keys, each photo opens the listing itself.</div>';
+  if(D.primeiraVez&&!D.demo)b+='<div class="banner">First check: from the next one on, new auctions will be marked.</div>';
+  (D.erros||[]).forEach(e=>{b+=`<div class="banner err"></div>`});
+  $("banners").innerHTML=b;
+  [...$("banners").querySelectorAll(".err")].forEach((el,i)=>el.textContent="Error in "+D.erros[i]);
+  const tabs=D.topicos.map(t=>[t.nome,t.nome,all.filter(i=>i._ts.includes(t.nome)).length]);
+  $("tabs").innerHTML="";
+  tabs.forEach(([v,l,n])=>{const x=document.createElement("button");x.className="tab";x.type="button";x.setAttribute("aria-pressed",v===topico);
+    x.append(l);x.onclick=()=>{if(topico!==v){topico=v;paisSel=null}mostrar=POR_PAGINA;render()};$("tabs").append(x)});
+  $("ferramentas").hidden=!topico;$("logo").hidden=!topico;
+  if(!topico){
+    $("paises").hidden=true;$("lateral").hidden=true;
+    const L=$("list");L.classList.remove("grid");L.classList.add("vazio");$("logo").hidden=true;L.innerHTML='<div class="escolha"><img class="logo-grande" alt="" src="'+$("logo").getAttribute("src")+'"><div>Choose a genre above to see its auctions</div></div>';return;
+  }
+  // botoes de pais: so os paises que existem neste genero, do que tem mais leiloes para o que tem menos
+  const doGenero=all.filter(i=>i._ts.includes(topico));
+  const cont=new Map();for(const i of doGenero){const k=i.pais||"";cont.set(k,(cont.get(k)||0)+1)}
+  if(paisSel!==null&&!cont.has(paisSel))paisSel=null;
+  const P=$("paises");P.hidden=false;P.innerHTML="";
+  const rot=document.createElement("div");rot.className="rotulo";rot.textContent="Located in";P.append(rot);
+  const botaoPais=(k,txt,n)=>{const x=document.createElement("button");x.className="tab pais";x.type="button";x.setAttribute("aria-pressed",k===paisSel);
+    x.append(txt);const sm=document.createElement("small");sm.textContent=n;x.append(sm);x.onclick=()=>{paisSel=k;mostrar=POR_PAGINA;render()};P.append(x)};
+  botaoPais(null,"All countries",doGenero.length);
+  [...cont.entries()].sort((a,b)=>b[1]-a[1]).forEach(([k,n])=>botaoPais(k,k?nomePais(k):"Unknown",n));
+  // etiqueta lateral: o genero (e o pais, se escolhido)
+  const ativo=tabs.find(([v])=>v===topico);
+  const lat=$("lateral");lat.textContent=ativo[1]+(paisSel!==null?" · "+(paisSel?nomePais(paisSel):"Unknown"):"");
+  const ls=document.createElement("small");ls.textContent=paisSel!==null?cont.get(paisSel):ativo[2];lat.append(ls);
+  lista(all);
+}
+function lista(all){
+  const f=$("filtro").value.trim().toLowerCase(),agora=Date.now();
+  const emTopico=i=>i._ts.includes(topico)&&(paisSel===null||(i.pais||"")===paisSel);
+  let it=all.filter(i=>emTopico(i)&&(!$("soNovos").checked||i.novo)&&(!$("so24").checked||(i.fim&&new Date(i.fim)-agora<864e5))&&(!f||i.titulo.toLowerCase().includes(f)));
+  const o=$("ordem").value;
+  const fimMs=i=>i.fim?new Date(i.fim).getTime():Infinity;
+  it.sort(o==="precoDesc"?(a,b)=>emEuros(b)-emEuros(a):o==="precoAsc"?(a,b)=>emEuros(a)-emEuros(b):o==="bids"?(a,b)=>(b.licitacoes||0)-(a.licitacoes||0):o==="obs"?(a,b)=>(b.observadores||0)-(a.observadores||0):(a,b)=>fimMs(a)-fimMs(b));
+  const L=$("list");L.innerHTML="";L.classList.remove("vazio");L.classList.toggle("grid",vista==="fotos");
+  if(!it.length){L.innerHTML='<div class="empty">No auctions match these filters.</div>';return}
+  // so se desenham os primeiros "mostrar" discos; o resto aparece com "Show more" (pagina mais leve)
+  const total=it.length;it=it.slice(0,mostrar);
+  if(vista==="fotos"){for(const i of it)L.append(cartao(i))}
+  else for(const i of it){
+    const row=document.createElement("div");row.className="item";
+    const im=i.img?Object.assign(document.createElement("img"),{className:"thumb",src:i.img,alt:"",loading:"lazy"}):Object.assign(document.createElement("div"),{className:"ph"});
+    const mid=document.createElement("div");mid.style.minWidth="0";
+    if(i.novo){const n=document.createElement("span");n.className="badge new";n.textContent="new";mid.append(n)}
+    const a=Object.assign(document.createElement("a"),{className:"t",href:i.url,target:"_blank",rel:"noopener"});a.textContent=i.titulo;mid.append(a);
+    const m=document.createElement("div");m.className="meta";
+    [obsTxt(i.observadores),nomePais(i.pais),i.site,i.vendedor&&`${i.vendedor}${i.feedback!=null?" ("+i.feedback+")":""}`,i.estado,i.envio!=null&&("shipping "+money(emEuros({preco:i.envio,moeda:i.moeda}),"EUR")),i.fim&&("ends "+fmtData(i.fim))].filter(Boolean).forEach(t=>{const s=document.createElement("span");s.textContent=t;m.append(s)});
+    mid.append(m);
+    const r=document.createElement("div");r.className="right";const fl=falta(i.fim);
+    r.innerHTML=`<div class="price"></div><div class="bids"></div><div class="left ${fl.cls}"></div>`;
+    precoEm(r.children[0],i);
+    r.children[1].textContent=i.licitacoes==null?"":i.licitacoes===1?"1 bid":i.licitacoes+" bids";
+    r.children[2].textContent=fl.txt;if(i.fim)r.children[2].dataset.fim=i.fim;
+    row.append(im,mid,r);L.append(row);
+  }
+  if(total>mostrar){
+    const mais=document.createElement("div");mais.className="mais";
+    const bt=document.createElement("button");bt.type="button";bt.className="tab";bt.textContent=`Show more (${total-mostrar} left)`;
+    bt.onclick=()=>{mostrar+=POR_PAGINA;render()};mais.append(bt);L.append(mais);
+    // carrega mais sozinho quando o botao chega ao ecra
+    try{const ob=new IntersectionObserver(([e])=>{if(e.isIntersecting){ob.disconnect();bt.click()}},{rootMargin:"400px"});ob.observe(mais)}catch{}
+  }
+}
+// precos: tudo em euros com as taxas do BCE; o preco original fica pequeno ao lado
+function emEuros(i){if(!i.moeda||i.moeda==="EUR")return i.preco;const t=D.cambio&&D.cambio[i.moeda];return t?i.preco/t:i.preco}
+function precoEm(el,i){el.textContent=money(emEuros(i),"EUR");
+  if(i.moeda&&i.moeda!=="EUR"){const o=document.createElement("span");o.className="orig";o.textContent=" ("+money(i.preco,i.moeda)+")";el.append(o)}}
+function cartao(i){
+  const c=document.createElement("div");c.className="card";
+  const a=Object.assign(document.createElement("a"),{className:"photo",href:i.url,target:"_blank",rel:"noopener",title:i.titulo});
+  a.append(i.img?Object.assign(document.createElement("img"),{src:i.img,alt:i.titulo,loading:"lazy"}):Object.assign(document.createElement("div"),{className:"ph"}));
+  if(i.novo){const n=document.createElement("span");n.className="badge new";n.textContent="new";a.append(n)}
+  const inf=document.createElement("div");inf.className="info";
+  const t=Object.assign(document.createElement("a"),{className:"ct",href:i.url,target:"_blank",rel:"noopener"});t.textContent=i.titulo;
+  const r=document.createElement("div");r.className="row1";const fl=falta(i.fim);
+  const p=document.createElement("span");p.className="price";precoEm(p,i);
+  const b=document.createElement("span");b.className="bids";b.textContent=i.licitacoes==null?"":i.licitacoes+(i.licitacoes===1?" bid":" bids");
+  r.append(p,b);
+  const l=document.createElement("div");l.className="left "+fl.cls;l.textContent=fl.txt;if(i.fim)l.dataset.fim=i.fim;
+  // seguidores (pessoas com o leilão na watchlist do eBay)
+  const sg=document.createElement("div");sg.className="seguidores"+(i.observadores>0?" tem":"");sg.textContent=obsTxt(i.observadores);
+  if(i.observadores==null)sg.title="eBay has not given this number yet";
+  inf.append(t,r,l,sg);
+  const origem=[nomePais(i.pais),i.site].filter(Boolean).join(" · ");
+  if(origem){const s=document.createElement("div");s.className="origem";s.textContent=origem;inf.append(s)}
+  c.append(a,inf);return c;
+}
+// país de origem do leilão (código ISO vindo do eBay) escrito por extenso
+let nomesPais=null;try{nomesPais=new Intl.DisplayNames(["en"],{type:"region"})}catch{}
+const nomePais=c=>{if(!c)return "";try{return nomesPais?nomesPais.of(c):c}catch{return c}};
+const obsTxt=n=>n==null?"watchers: unknown":n===1?"1 watcher":n+" watchers";
+let vista="fotos";
+try{vista=localStorage.getItem("l45:vista")||"fotos"}catch{}
+document.querySelectorAll("#vista button").forEach(b=>{b.setAttribute("aria-pressed",b.dataset.v===vista);
+  b.onclick=()=>{vista=b.dataset.v;try{localStorage.setItem("l45:vista",vista)}catch{};document.querySelectorAll("#vista button").forEach(x=>x.setAttribute("aria-pressed",x===b));render()}});
+const deNovo=()=>{mostrar=POR_PAGINA;render()};
+["soNovos","so24","ordem"].forEach(id=>$(id).addEventListener("change",deNovo));
+$("filtro").addEventListener("input",deNovo);
+render();
+// mostra a etiqueta lateral só quando a barra dos separadores já não se vê
+try{
+  new IntersectionObserver(([e])=>{$("lateral").hidden=!topico||e.isIntersecting||e.boundingClientRect.top>0},{threshold:0}).observe($("tabs"));
+}catch{}
+$("lateral").onclick=()=>$("tabs").scrollIntoView({behavior:"smooth",block:"center"});
+// a cada minuto: atualiza só o tempo que falta; se algum leilão terminou, refaz a lista (ele desaparece)
+setInterval(()=>{
+  let terminou=false;
+  document.querySelectorAll("[data-fim]").forEach(el=>{const f=falta(el.dataset.fim);if(f.cls==="over")terminou=true;el.textContent=f.txt;el.className="left "+f.cls});
+  if(terminou)render();
+},60000);
+</script>
+</body>
+</html>
