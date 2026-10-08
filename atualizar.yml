@@ -1,0 +1,63 @@
+# Atualiza 45recordsauction.com todos os dias e publica no GitHub Pages.
+# As chaves ficam em Settings > Secrets and variables > Actions (nunca no repositorio).
+# Sem as chaves do eBay, publica a pagina que esta em publicar/index.html.
+name: Atualizar 45recordsauction.com
+
+on:
+  schedule:
+    - cron: '0 6 * * *'     # todos os dias as 06:00 UTC
+  workflow_dispatch:         # botao "Run workflow" para correr a mao
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: windows-latest
+    timeout-minutes: 300
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Procurar leiloes e gerar a pagina
+        shell: powershell
+        env:
+          EBAY_APP_ID: ${{ secrets.EBAY_APP_ID }}
+          EBAY_CERT_ID: ${{ secrets.EBAY_CERT_ID }}
+          EBAY_DEV_ID: ${{ secrets.EBAY_DEV_ID }}
+          EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
+          DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
+        run: |
+          if (-not $env:EBAY_APP_ID) { Write-Host "Ainda sem chaves do eBay: publica a pagina atual."; exit 0 }
+          @(
+            "EBAY_APP_ID=$env:EBAY_APP_ID", "EBAY_CERT_ID=$env:EBAY_CERT_ID", "EBAY_DEV_ID=$env:EBAY_DEV_ID",
+            "EBAY_USER_TOKEN=$env:EBAY_USER_TOKEN", "DISCOGS_TOKEN=$env:DISCOGS_TOKEN"
+          ) | Set-Content -Path chaves.env -Encoding ascii
+          .\leiloes.ps1 -Saida publicar\index.html
+          Remove-Item chaves.env
+
+      - name: Guardar o estado (novos, cache do Discogs)
+        shell: bash
+        run: |
+          git config user.name "45recordsauction-bot"
+          git config user.email "actions@users.noreply.github.com"
+          for f in vistos.json discogs-cache.json lista-observados.json publicar/index.html; do
+            if [ -f "$f" ]; then git add "$f"; fi
+          done
+          git commit -m "Atualizacao diaria" || echo "Nada para guardar"
+          git push || echo "Push falhou"
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: publicar
+      - id: deploy
+        uses: actions/deploy-pages@v4
