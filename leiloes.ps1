@@ -173,8 +173,12 @@ function Converter-Item($s, $mercado) {
     $img = $null; if ($s.image) { $img = $s.image.imageUrl -replace 's-l\d+\.', 's-l500.' }
     $bids = 0; if ($s.bidCount) { $bids = [int]$s.bidCount }
     # link direto e limpo para o anuncio: https://www.ebay.xx/itm/<numero>
+    # o link e o site seguem o pais do vendedor (ex.: vendedor dos EUA -> ebay.com), mesmo que encontrado noutro site
+    $dominio = $dominios[$mercado]
+    $porPais = @{ US = 'www.ebay.com'; GB = 'www.ebay.co.uk'; FR = 'www.ebay.fr'; DE = 'www.ebay.de'; IT = 'www.ebay.it'; ES = 'www.ebay.es' }
+    if ($s.itemLocation -and $porPais.ContainsKey([string]$s.itemLocation.country)) { $dominio = $porPais[[string]$s.itemLocation.country] }
     $url = $s.itemWebUrl
-    if ($s.legacyItemId) { $url = "https://$($dominios[$mercado])/itm/$($s.legacyItemId)" }
+    if ($s.legacyItemId) { $url = "https://$dominio/itm/$($s.legacyItemId)" }
     [ordered]@{
         id         = $s.itemId
         titulo     = $s.title
@@ -190,7 +194,7 @@ function Converter-Item($s, $mercado) {
         pais       = $s.itemLocation.country
         envio      = $envio
         num        = [string]$s.legacyItemId
-        site       = $dominios[$mercado] -replace '^www\.', ''
+        site       = $dominio -replace '^www\.', ''
         observadores = $null
     }
 }
