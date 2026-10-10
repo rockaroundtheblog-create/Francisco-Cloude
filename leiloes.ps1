@@ -631,8 +631,8 @@ if (-not $Demo -and $todos.Count -gt 0 -and $config.observadores.ativo) {
                     Write-Host "  GetItem nao devolve o numero; a usar a lista de observados da conta ..."
                     $obs = Observadores-Lista $nums
                 } else {
-                    # so no registo: na pagina aparece "watchers: unknown" (nao e um erro para quem visita)
-                    Write-Host '  Seguidores: o eBay nao da o numero pelo GetItem (so ao vendedor).'
+                    # (ler as paginas dos leiloes tambem nao serve: o eBay bloqueia programas com 403 / Error Page)
+                    $erros += 'Watchers: eBay does not return the number through GetItem. Turn on "usarListaObservados" in config.json to use the watchlist.'
                     $obs = @{}
                 }
             }
