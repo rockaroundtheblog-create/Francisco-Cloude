@@ -372,21 +372,23 @@ function Correspondencias($consulta, $resultados) {
 }
 
 # Decide a partir das edicoes encontradas e dos styles do topico (ex.: Garage Rock, Beat).
-# Entra so se houver uma edicao Vinyl 7"/45 RPM com um dos styles do topico.
+# Entra so se pelo menos METADE das edicoes Vinyl 7"/45 RPM encontradas tiver um dos styles do
+# topico (uma so edicao "Garage Rock" entre varias Punk, ex.: Stiff Little Fingers, nao chega).
 function Decidir-Lista($lista, $estilos) {
     $estilos = @($estilos | Where-Object { $_ })
-    $haSingle = $false; $haGrande = $false
+    $singles = 0; $comEstilo = 0; $haGrande = $false
     foreach ($c in @($lista)) {
         $formatos = @(([string]$c.f) -split '\|')
         $single = ($formatos -contains 'Vinyl') -and (($formatos -contains '7"') -or ($formatos -contains '45 RPM'))
         if ($single) {
-            $haSingle = $true
+            $singles++
             $styles = @(([string]$c.s) -split '\|')
-            if ($estilos.Count -eq 0 -or @($styles | Where-Object { $estilos -contains $_ }).Count -gt 0) { return $true }
+            if ($estilos.Count -eq 0 -or @($styles | Where-Object { $estilos -contains $_ }).Count -gt 0) { $comEstilo++ }
         }
         elseif (@($formatos | Where-Object { 'LP', '12"', '10"', 'Album', 'CD', 'Cassette' -contains $_ }).Count -gt 0) { $haGrande = $true }
     }
-    if ($haSingle -or $haGrande) { return $false }   # e um single de outro estilo, ou so existe em LP/CD
+    if ($comEstilo -gt 0 -and ($comEstilo * 2) -ge $singles) { return $true }
+    if ($singles -gt 0 -or $haGrande) { return $false }   # single de outro estilo, ou so existe em LP/CD
     return $null
 }
 
@@ -599,7 +601,9 @@ if (-not $Demo -and $config.discogs.confirmarTodos) {
         $ed = Discogs-Edicoes $i.titulo
         $destino = @($origem)
         if ($null -ne $ed -and @($ed).Count -gt 0) {
-            $extra = @($config.topicos | Where-Object { $origem -notcontains $_.nome -and (Decidir-Lista $ed $_.estilosDiscogs) -eq $true } | ForEach-Object { $_.nome })
+            # um genero cuja regra "fixo" manda o disco para outro (ex.: "kbd" no titulo -> so Punk) nao e acrescentado
+            $extra = @($config.topicos | Where-Object { $origem -notcontains $_.nome -and (Decidir-Lista $ed $_.estilosDiscogs) -eq $true } |
+                Where-Object { $r = Reencaminhar-Para $_ $i.titulo; -not ($r -and $r.fixo) } | ForEach-Object { $_.nome })
             if ($extra.Count -gt 0) { $destino += $extra; $mudados++ }
         }
         if ($fixos.ContainsKey($id)) { $destino = @($fixos[$id]) }
@@ -632,7 +636,8 @@ if (-not $Demo -and $todos.Count -gt 0 -and $config.observadores.ativo) {
                     $obs = Observadores-Lista $nums
                 } else {
                     # (ler as paginas dos leiloes tambem nao serve: o eBay bloqueia programas com 403 / Error Page)
-                    $erros += 'Watchers: eBay does not return the number through GetItem. Turn on "usarListaObservados" in config.json to use the watchlist.'
+                    # so no registo, nao na pagina: para quem visita aparece "watchers: unknown" em cada leilao
+                    Write-Host '  Seguidores: o eBay nao da o numero pelo GetItem (so ao vendedor).'
                     $obs = @{}
                 }
             }
@@ -642,6 +647,23 @@ if (-not $Demo -and $todos.Count -gt 0 -and $config.observadores.ativo) {
             $erros += "Watchers: $($_.Exception.Message)"
         }
     }
+}
+# --- seguidores lidos a mao no browser (observadores.json: { "lido": data, "w": { "numero": seguidores } }) ---
+# O eBay nao da o numero a programas; estes numeros sao lidos nas paginas dos leiloes, num browser,
+# e carregados no GitHub. Servem enquanto o leilao estiver ativo (so para os que a API nao trouxe).
+$obsManualPath = Join-Path $dir 'observadores.json'
+if (-not $Demo -and (Test-Path $obsManualPath)) {
+    try {
+        $om = Ler-Texto $obsManualPath | ConvertFrom-Json
+        $wm = @{}; foreach ($p in $om.w.PSObject.Properties) { $wm[$p.Name] = [int]$p.Value }
+        # "zero": numeros dos leiloes lidos sem seguidores, separados por virgulas
+        foreach ($n in (([string]$om.zero) -split ',')) { if ($n -and -not $wm.ContainsKey($n)) { $wm[$n] = 0 } }
+        $usados = 0
+        foreach ($tp in $resultado) { foreach ($i in $tp.itens) {
+            if ($null -eq $i['observadores'] -and $wm.ContainsKey([string]$i.id)) { $i['observadores'] = $wm[[string]$i.id]; $usados++ }
+        } }
+        Write-Host "Seguidores lidos a mao ($($om.lido)): $usados leiloes"
+    } catch { Write-Warning "observadores.json: $($_.Exception.Message)" }
 }
 if ($Demo) {
     $rnd = New-Object Random 7
