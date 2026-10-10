@@ -88,8 +88,7 @@
                         "nome":  "Rockabilly",
                         "generos":  "(rockabilly,rock-a-billy)",
                         "estilosDiscogs":  [
-                                               "Rockabilly",
-                                               "Rock \u0026 Roll"
+                                               "Rockabilly"
                                            ],
                         "pesquisa":  "(rockabilly,rock-a-billy) 45",
                         "pesquisaPorMercado":  {
@@ -175,7 +174,8 @@
                                                  "manterSe":  "\\bpunk|\\bkbd\\b|hardcore|\\boi\\b",
                                                  "para":  "Garage"
                                              }
-                                         ]
+                                         ],
+                        "semConfirmar":  "\\bkbd\\b"
                     }
                 ]
 }
