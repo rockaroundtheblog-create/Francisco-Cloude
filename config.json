@@ -17,7 +17,7 @@
                 },
     "verificarDescricao":  {
                                "ativo":  true,
-                               "maxPesquisa":  1000,
+                               "maxPesquisa":  2000,
                                "maxVerificar":  300
                            },
     "observadores":  {
