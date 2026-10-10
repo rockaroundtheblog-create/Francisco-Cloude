@@ -41,7 +41,15 @@ $horasNovo = 24; if ($config.horasNovo) { $horasNovo = [double]$config.horasNovo
 $limiteNovo = $agora.AddHours(-$horasNovo).ToString('yyyy-MM-ddTHH:mm:ssZ')
 
 function Pedir-Json($url, $headers) {
-    $r = Invoke-WebRequest -Uri $url -Headers $headers -UseBasicParsing
+    # 429 = demasiados pedidos: espera e tenta mais 2 vezes (se for o limite diario, desiste)
+    for ($tentativa = 1; ; $tentativa++) {
+        try { $r = Invoke-WebRequest -Uri $url -Headers $headers -UseBasicParsing; break }
+        catch {
+            $codigo = 0; try { $codigo = [int]$_.Exception.Response.StatusCode } catch {}
+            if ($codigo -ne 429 -or $tentativa -ge 3) { throw }
+            Start-Sleep -Seconds (30 * $tentativa)
+        }
+    }
     $txt = [Text.Encoding]::UTF8.GetString($r.RawContentStream.ToArray())
     return $txt | ConvertFrom-Json
 }
@@ -689,6 +697,16 @@ if (-not $Demo) {
     if ($script:discogsCache.Count -gt 0) { Guardar-DiscogsCache }
     if ($script:discogsPedidos -gt 0) { Write-Host "Discogs: $($script:discogsPedidos) pesquisas" }
     Write-Host "Detalhes de leiloes pedidos ao eBay: $($script:pedidosDetalhe) (limite $($script:maxDetalhes))"
+}
+
+# --- protecao: se o eBay falhou em muitas pesquisas (ex.: limite diario de pedidos, erro 429),
+# nao se gera a pagina e fica publicada a anterior, em vez de um site vazio ou incompleto ---
+$combos = @($mercados).Count * @($config.topicos).Count
+$falhas = @($erros | Where-Object { $_ -match ' on www\.' }).Count
+$total = @($resultado | ForEach-Object { $_.itens }).Count
+if (-not $Demo -and ($falhas -ge [Math]::Max(1, [int]($combos / 3)) -or $total -eq 0)) {
+    Write-Warning "O eBay falhou em $falhas de $combos pesquisas ($total leiloes): a pagina anterior fica publicada."
+    exit 0
 }
 
 # --- gerar pagina ---

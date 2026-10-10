@@ -8,7 +8,7 @@
                      "EBAY_ES"
                  ],
     "categoria":  "176985",
-    "maxPorTopico":  3000,
+    "maxPorTopico":  1500,
     "horasNovo":  24,
     "discogs":  {
                     "ativo":  true,
@@ -17,8 +17,9 @@
                 },
     "verificarDescricao":  {
                                "ativo":  true,
-                               "maxPesquisa":  2000,
-                               "maxVerificar":  300
+                               "maxPesquisa":  1000,
+                               "maxVerificar":  300,
+                               "maxPedidos":  500
                            },
     "observadores":  {
                          "ativo":  true,
