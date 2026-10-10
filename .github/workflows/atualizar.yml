@@ -6,6 +6,7 @@ name: Atualizar 45recordsauction.com
 on:
   schedule:
     - cron: '0 6 * * *'     # todos os dias as 06:00 UTC
+    - cron: '0 17 * * *'
   workflow_dispatch:         # botao "Run workflow" para correr a mao
 
 permissions:
