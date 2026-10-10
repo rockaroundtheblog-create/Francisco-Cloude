@@ -263,18 +263,26 @@ function Aspectos-Single($mercado, $q) {
     return $res
 }
 
-# Le os detalhes (caracteristicas, descricao, envio) de ate 20 leiloes de cada vez
-function Detalhes($mercado, $nums) {
-    $res = @{}
-    for ($i = 0; $i -lt $nums.Count; $i += 20) {
-        $lote = $nums[$i..([Math]::Min($i + 19, $nums.Count - 1))] | ForEach-Object { "v1|$_|0" }
-        $url = 'https://api.ebay.com/buy/browse/v1/item/?item_ids=' + [Uri]::EscapeDataString(($lote -join ','))
-        try {
-            $r = Pedir-Json $url (Cabecalhos $mercado)
-            foreach ($it in @($r.items)) { if ($it.legacyItemId) { $res[[string]$it.legacyItemId] = $it } }
-        } catch { Write-Warning "Detalhes: $($_.Exception.Message)" }
+# Formato de um leilao lido nos detalhes (caracteristicas e descricao): $true / $false / $null.
+# Um pedido por leilao (o getItems de 20 de cada vez exige autorizacao especial do eBay e da 403).
+# A resposta fica guardada em vistos.json ("f:<numero>"), para nao voltar a pedir nos dias seguintes;
+# $script:maxDetalhes limita os pedidos por execucao (o eBay da 5000 pedidos/dia a Browse API).
+$script:pedidosDetalhe = 0
+$script:maxDetalhes = 1500; if ($config.verificarDescricao.maxPedidos) { $script:maxDetalhes = [int]$config.verificarDescricao.maxPedidos }
+function Formato-Detalhes($mercado, $num) {
+    $k = "f:$num"
+    if ($vistos.ContainsKey($k)) {
+        switch ((([string]$vistos[$k]) -split '\|')[-1]) { 's' { return $true } 'n' { return $false } default { return $null } }
     }
-    return $res
+    if ($script:pedidosDetalhe -ge $script:maxDetalhes) { return $null }
+    $script:pedidosDetalhe++
+    $url = 'https://api.ebay.com/buy/browse/v1/item/get_item_by_legacy_id?legacy_item_id=' + $num
+    try { $det = Pedir-Json $url (Cabecalhos $mercado) }
+    catch { Write-Warning "Detalhes $($num): $($_.Exception.Message)"; return $null }
+    $single = E-Single $det
+    $letra = if ($single -eq $true) { 's' } elseif ($single -eq $false) { 'n' } else { 'x' }
+    $vistos[$k] = "$carimbo|$letra"
+    return $single
 }
 
 # Decide, a partir dos detalhes, se o disco e um single. $true / $false / $null (nao se sabe)
@@ -484,11 +492,9 @@ foreach ($t in $config.topicos) {
                             $resto += $s
                         }
                         $resto = @($resto | Select-Object -First $config.verificarDescricao.maxVerificar)
-                        $det = Detalhes $m @($resto | ForEach-Object { [string]$_.legacyItemId })
                         foreach ($s in $resto) {
                             $num = [string]$s.legacyItemId
-                            $single = $null
-                            if ($det.ContainsKey($num)) { $single = E-Single $det[$num] }
+                            $single = Formato-Detalhes $m $num
                             if ($single -eq $false) { continue }
                             # 4) nada escrito sobre o formato: procura o disco no Discogs
                             if ($null -eq $single) {
@@ -589,6 +595,7 @@ if (-not $Demo) {
     Gravar-Texto $vistosPath ($limpo | ConvertTo-Json -Depth 3)
     if ($script:discogsCache.Count -gt 0) { Guardar-DiscogsCache }
     if ($script:discogsPedidos -gt 0) { Write-Host "Discogs: $($script:discogsPedidos) pesquisas" }
+    Write-Host "Detalhes de leiloes pedidos ao eBay: $($script:pedidosDetalhe) (limite $($script:maxDetalhes))"
 }
 
 # --- gerar pagina ---
