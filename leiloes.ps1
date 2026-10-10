@@ -175,8 +175,14 @@ function Converter-Item($s, $mercado) {
     # link direto e limpo para o anuncio: https://www.ebay.xx/itm/<numero>
     # o link e o site seguem o pais do vendedor (ex.: vendedor dos EUA -> ebay.com), mesmo que encontrado noutro site
     $dominio = $dominios[$mercado]
-    $porPais = @{ US = 'www.ebay.com'; GB = 'www.ebay.co.uk'; FR = 'www.ebay.fr'; DE = 'www.ebay.de'; IT = 'www.ebay.it'; ES = 'www.ebay.es' }
-    if ($s.itemLocation -and $porPais.ContainsKey([string]$s.itemLocation.country)) { $dominio = $porPais[[string]$s.itemLocation.country] }
+    # paises sem eBay proprio (Grecia, Portugal, Japao...) -> ebay.com
+    $porPais = @{ US = 'www.ebay.com'; GB = 'www.ebay.co.uk'; FR = 'www.ebay.fr'; DE = 'www.ebay.de'; IT = 'www.ebay.it'; ES = 'www.ebay.es'
+                  CA = 'www.ebay.ca'; AU = 'www.ebay.com.au'; AT = 'www.ebay.at'; NL = 'www.ebay.nl'; BE = 'www.befr.ebay.be'
+                  IE = 'www.ebay.ie'; CH = 'www.ebay.ch'; PL = 'www.ebay.pl' }
+    if ($s.itemLocation -and $s.itemLocation.country) {
+        $p = [string]$s.itemLocation.country
+        $dominio = if ($porPais.ContainsKey($p)) { $porPais[$p] } else { 'www.ebay.com' }
+    }
     $url = $s.itemWebUrl
     if ($s.legacyItemId) { $url = "https://$dominio/itm/$($s.legacyItemId)" }
     [ordered]@{
@@ -184,8 +190,9 @@ function Converter-Item($s, $mercado) {
         titulo     = $s.title
         url        = $url
         img        = $img
-        preco      = [double]$preco.value
-        moeda      = $preco.currency
+        # preco na moeda do vendedor (o eBay converte para a moeda do site onde se pesquisou)
+        preco      = $(if ($preco.convertedFromValue) { [double]$preco.convertedFromValue } else { [double]$preco.value })
+        moeda      = $(if ($preco.convertedFromCurrency) { $preco.convertedFromCurrency } else { $preco.currency })
         licitacoes = $bids
         fim        = $s.itemEndDate
         estado     = $s.condition
@@ -599,13 +606,14 @@ $logo = Join-Path $dir 'player.gif'
 if (Test-Path $logo) {
     $modelo = $modelo.Replace('src="player.gif"', 'src="data:image/gif;base64,' + [Convert]::ToBase64String([IO.File]::ReadAllBytes($logo)) + '"')
 }
-$saida = Join-Path $dir 'leiloes.html'
+# (o PowerShell nao distingue maiusculas: $ficheiroPagina nao pode chamar-se $saida, senao apaga o parametro -Saida)
+$ficheiroPagina = Join-Path $dir 'leiloes.html'
 if ($Saida) {
-    # ex.: publicar\index.html no GitHub
-    $saida = if ([IO.Path]::IsPathRooted($Saida)) { $Saida } else { Join-Path $dir $Saida }
-    $pastaSaida = Split-Path $saida
+    # ex.: index.html no GitHub
+    $ficheiroPagina = if ([IO.Path]::IsPathRooted($Saida)) { $Saida } else { Join-Path $dir $Saida }
+    $pastaSaida = Split-Path $ficheiroPagina
     if (-not (Test-Path $pastaSaida)) { New-Item -ItemType Directory -Path $pastaSaida | Out-Null }
 }
-Gravar-Texto $saida ($modelo.Replace('/*DADOS*/null', $json))
-Write-Host "Pagina gerada: $saida"
-if ($Abrir) { Start-Process $saida }
+Gravar-Texto $ficheiroPagina ($modelo.Replace('/*DADOS*/null', $json))
+Write-Host "Pagina gerada: $ficheiroPagina"
+if ($Abrir) { Start-Process $ficheiroPagina }
