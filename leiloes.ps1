@@ -268,21 +268,49 @@ function Aspectos-Single($mercado, $q) {
 # A resposta fica guardada em vistos.json ("f:<numero>"), para nao voltar a pedir nos dias seguintes;
 # $script:maxDetalhes limita os pedidos por execucao (o eBay da 5000 pedidos/dia a Browse API).
 $script:pedidosDetalhe = 0
-$script:maxDetalhes = 1500; if ($config.verificarDescricao.maxPedidos) { $script:maxDetalhes = [int]$config.verificarDescricao.maxPedidos }
-function Formato-Detalhes($mercado, $num) {
+$script:maxDetalhes = 1000; if ($config.verificarDescricao.maxPedidos) { $script:maxDetalhes = [int]$config.verificarDescricao.maxPedidos }
+# Cada combinacao site+genero tem a sua parte dos pedidos ($script:quotaCombo), para um genero
+# com muitos anuncios (ex.: Garage no ebay.com) nao gastar tudo e deixar os outros sem nada.
+$script:quotaCombo = 0
+# Devolve @{ single = $true/$false/$null; generos = 'texto das caracteristicas Genero/Estilo' ou $null }
+function Info-Detalhes($mercado, $num) {
     $k = "f:$num"
     if ($vistos.ContainsKey($k)) {
-        switch ((([string]$vistos[$k]) -split '\|')[-1]) { 's' { return $true } 'n' { return $false } default { return $null } }
+        $partes = ([string]$vistos[$k]) -split '\|', 3
+        $single = switch ($partes[1]) { 's' { $true } 'n' { $false } default { $null } }
+        if ($partes.Count -ge 3) { return @{ single = $single; generos = $partes[2] } }
+        $guardado = @{ single = $single; generos = $null }
     }
-    if ($script:pedidosDetalhe -ge $script:maxDetalhes) { return $null }
-    $script:pedidosDetalhe++
+    if ($script:pedidosDetalhe -ge $script:maxDetalhes -or $script:quotaCombo -le 0) {
+        if ($guardado) { return $guardado } else { return @{ single = $null; generos = $null } }
+    }
+    $script:pedidosDetalhe++; $script:quotaCombo--
     $url = 'https://api.ebay.com/buy/browse/v1/item/get_item_by_legacy_id?legacy_item_id=' + $num
     try { $det = Pedir-Json $url (Cabecalhos $mercado) }
-    catch { Write-Warning "Detalhes $($num): $($_.Exception.Message)"; return $null }
+    catch { Write-Warning "Detalhes $($num): $($_.Exception.Message)"; return @{ single = $null; generos = $null } }
     $single = E-Single $det
+    # genero/estilo indicados pelo vendedor (os nomes mudam com a lingua do site)
+    $gen = @($det.localizedAspects | Where-Object { [string]$_.name -match 'genre|genere|g.nero|style|stil|estilo|musik' } |
+        ForEach-Object { ([string]$_.value).ToLowerInvariant() }) -join ';'
+    $gen = $gen -replace '\|', ' '
     $letra = if ($single -eq $true) { 's' } elseif ($single -eq $false) { 'n' } else { 'x' }
-    $vistos[$k] = "$carimbo|$letra"
-    return $single
+    $vistos[$k] = "$carimbo|$letra|$gen"
+    return @{ single = $single; generos = $gen }
+}
+
+# Regex com as palavras do genero (config "generos"), ex.: "(punk,kbd)" -> (punk|kbd)
+function Regex-Genero($t) {
+    $palavras = ([string]$t.generos) -replace '[()"]', '' -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+    # palavra inteira (aceita plural): "psych" nao apanha "Psycho"
+    '(?i)\b(' + (($palavras | ForEach-Object { [Regex]::Escape($_) -replace '(\\ |-)+', '[\s\-]*' }) -join '|') + ')s?\b'
+}
+# O genero tem de estar no titulo ou nas caracteristicas Genero/Estilo do anuncio.
+# (A pesquisa da API tambem encontra a palavra na descricao, onde muitos vendedores repetem
+#  "garage beat" em todos os anuncios: isso nao chega.)
+function Tem-Genero($mercado, $num, $titulo, $reGen) {
+    if ([string]$titulo -match $reGen) { return $true }
+    $info = Info-Detalhes $mercado $num
+    return ($info.generos -and $info.generos -match $reGen)
 }
 
 # Decide, a partir dos detalhes, se o disco e um single. $true / $false / $null (nao se sabe)
@@ -474,6 +502,8 @@ foreach ($t in $config.topicos) {
                     if ($t.pesquisaPorMercado -and $t.pesquisaPorMercado.$m) { $pesquisa = $t.pesquisaPorMercado.$m }
                     $generos = $t.generos; if (-not $generos) { $generos = $pesquisa }
                     $achados = [ordered]@{}   # num -> resumo
+                    $reGen = Regex-Genero $t; $semGenero = 0
+                    $script:quotaCombo = [Math]::Max(20, [int]($script:maxDetalhes / [Math]::Max(1, @($mercados).Count * @($config.topicos).Count)))
 
                     # 1) caracteristicas do anuncio: tamanho 7" ou velocidade 45
                     $asp = @(Aspectos-Single $m $generos)
@@ -489,6 +519,7 @@ foreach ($t in $config.topicos) {
                         if (-not $num -or $ids.ContainsKey($num)) { continue }
                         $ids[$num] = 1
                         if (Excluido $s.title $t.excluir) { continue }
+                        if (-not (Tem-Genero $m $num $s.title $reGen)) { $semGenero++; continue }
                         $i = Converter-Item $s $m
                         $i['id'] = $num
                         $para = Reencaminhar-Para $t $s.title
@@ -510,14 +541,15 @@ foreach ($t in $config.topicos) {
                         $resto = @($resto | Select-Object -First $config.verificarDescricao.maxVerificar)
                         foreach ($s in $resto) {
                             $num = [string]$s.legacyItemId
-                            $single = Formato-Detalhes $m $num
+                            $info = Info-Detalhes $m $num
+                            $single = $info.single
                             if ($single -eq $false) { continue }
-                            # 4) nada escrito sobre o formato: procura o disco no Discogs
-                            if ($null -eq $single) {
-                                $single = Discogs-Single $s.title $t.estilosDiscogs
-                                if ($single -eq $true) { $pelaDiscogs++ }
+                            $generoOk = ($s.title -match $reGen) -or ($info.generos -and $info.generos -match $reGen)
+                            # 4) formato ou genero por confirmar: o Discogs tem de dizer single E um style deste genero
+                            if ($null -eq $single -or -not $generoOk) {
+                                if ((Discogs-Single $s.title $t.estilosDiscogs) -eq $true) { $single = $true; $generoOk = $true; $pelaDiscogs++ }
                             }
-                            if ($single -ne $true) { continue }
+                            if ($single -ne $true -or -not $generoOk) { $semGenero += [int](-not $generoOk); continue }
                             $ids[$num] = 1
                             $i = Converter-Item $s $m
                             $i['id'] = $num
@@ -526,7 +558,7 @@ foreach ($t in $config.topicos) {
                             $lista += $i; $novos++; $verif++
                         }
                     }
-                    Write-Host "  $($dominios[$m]): $novos (dos quais $($verif - $pelaDiscogs) pela descricao e $pelaDiscogs pelo Discogs)"
+                    Write-Host "  $($dominios[$m]): $novos (dos quais $($verif - $pelaDiscogs) pela descricao e $pelaDiscogs pelo Discogs; $semGenero sem o genero no titulo nem nas caracteristicas)"
                 } catch {
                     $msg = "$($t.nome) on $($dominios[$m]): $($_.Exception.Message)"
                     Write-Warning $msg; $erros += $msg
@@ -599,7 +631,8 @@ if (-not $Demo -and $todos.Count -gt 0 -and $config.observadores.ativo) {
                     Write-Host "  GetItem nao devolve o numero; a usar a lista de observados da conta ..."
                     $obs = Observadores-Lista $nums
                 } else {
-                    $erros += 'Watchers: eBay does not return the number through GetItem. Turn on "usarListaObservados" in config.json to use the watchlist.'
+                    # so no registo: na pagina aparece "watchers: unknown" (nao e um erro para quem visita)
+                    Write-Host '  Seguidores: o eBay nao da o numero pelo GetItem (so ao vendedor).'
                     $obs = @{}
                 }
             }

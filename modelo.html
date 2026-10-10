@@ -222,6 +222,8 @@ function render(){
   tabs.forEach(([v,l,n])=>{const x=document.createElement("button");x.className="tab";x.type="button";x.setAttribute("aria-pressed",v===topico);
     x.append(l);x.onclick=()=>{if(topico!==v){topico=v;paisSel=null}mostrar=POR_PAGINA;render()};$("tabs").append(x)});
   $("ferramentas").hidden=!topico;$("logo").hidden=!topico;
+  // sem nenhum número de seguidores, a ordenação "Most watchers" não serve para nada
+  {const o=document.querySelector('#ordem option[value="obs"]');if(o){const tem=all.some(i=>i.observadores!=null);o.hidden=!tem;o.disabled=!tem}}
   if(!topico){
     $("paises").hidden=true;$("lateral").hidden=true;
     const L=$("list");L.classList.remove("grid");L.classList.add("vazio");$("logo").hidden=true;L.innerHTML='<div class="escolha"><img class="logo-grande" alt="" src="'+$("logo").getAttribute("src")+'"><div>Choose a genre above to see its auctions</div></div>';return;
