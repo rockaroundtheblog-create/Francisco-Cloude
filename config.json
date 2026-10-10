@@ -47,7 +47,14 @@
                                         "shirt",
                                         "poster",
                                         "12\""
-                                    ]
+                                    ],
+                        "reencaminhar":  [
+                                             {
+                                                 "padrao":  "\\bkbd\\b",
+                                                 "para":  "Punk",
+                                                 "fixo":  true
+                                             }
+                                         ]
                     },
                     {
                         "nome":  "Psych",
@@ -69,7 +76,14 @@
                                         "shirt",
                                         "poster",
                                         "12\""
-                                    ]
+                                    ],
+                        "reencaminhar":  [
+                                             {
+                                                 "padrao":  "\\bkbd\\b",
+                                                 "para":  "Punk",
+                                                 "fixo":  true
+                                             }
+                                         ]
                     },
                     {
                         "nome":  "Rockabilly",
@@ -91,7 +105,14 @@
                                         "shirt",
                                         "poster",
                                         "12\""
-                                    ]
+                                    ],
+                        "reencaminhar":  [
+                                             {
+                                                 "padrao":  "\\bkbd\\b",
+                                                 "para":  "Punk",
+                                                 "fixo":  true
+                                             }
+                                         ]
                     },
                     {
                         "nome":  "Power Pop",
@@ -112,7 +133,14 @@
                                         "shirt",
                                         "poster",
                                         "12\""
-                                    ]
+                                    ],
+                        "reencaminhar":  [
+                                             {
+                                                 "padrao":  "\\bkbd\\b",
+                                                 "para":  "Punk",
+                                                 "fixo":  true
+                                             }
+                                         ]
                     },
                     {
                         "nome":  "Punk",
@@ -141,7 +169,14 @@
                                         "pin",
                                         "12\"",
                                         "flexi"
-                                    ]
+                                    ],
+                        "reencaminhar":  [
+                                             {
+                                                 "padrao":  "garage[\\s\\-]*punk",
+                                                 "manterSe":  "\\bpunk|\\bkbd\\b|hardcore|\\boi\\b",
+                                                 "para":  "Garage"
+                                             }
+                                         ]
                     }
                 ]
 }

@@ -446,6 +446,20 @@ function Itens-Demo($topico, $n) {
 $token = $null
 if (-not $Demo) { $script:chaves = Ler-Chaves; $token = Obter-Token; $script:token = $token }
 $resultado = @(); $erros = @()
+# Discos que um topico manda para outro (config "reencaminhar"): ex.: "garage punk" no titulo
+# fica so em Garage, a menos que o titulo tenha outra palavra de punk ("kbd", "punk" solto...).
+# Depois o Discogs pode acrescentar-lhe Punk, se o style dele for Punk.
+$outros = @()
+# "fixo": o disco fica SO nesse genero (ex.: "kbd" -> so Punk); sai dos outros e o Discogs nao lhe acrescenta generos
+$fixos = @{}
+function Reencaminhar-Para($t, $titulo) {
+    foreach ($r in @($t.reencaminhar)) {
+        if (-not $r -or [string]$titulo -notmatch $r.padrao) { continue }
+        $resto = [string]$titulo -replace $r.padrao, ' '
+        if (-not $r.manterSe -or $resto -notmatch $r.manterSe) { return $r }
+    }
+    return $null
+}
 
 foreach ($t in $config.topicos) {
     Write-Host "A procurar: $($t.nome) ..."
@@ -477,6 +491,8 @@ foreach ($t in $config.topicos) {
                         if (Excluido $s.title $t.excluir) { continue }
                         $i = Converter-Item $s $m
                         $i['id'] = $num
+                        $para = Reencaminhar-Para $t $s.title
+                        if ($para) { $outros += @{ para = $para.para; item = $i; fixo = [bool]$para.fixo }; continue }
                         $lista += $i; $novos++
                     }
 
@@ -505,6 +521,8 @@ foreach ($t in $config.topicos) {
                             $ids[$num] = 1
                             $i = Converter-Item $s $m
                             $i['id'] = $num
+                            $para = Reencaminhar-Para $t $s.title
+                            if ($para) { $outros += @{ para = $para.para; item = $i; fixo = [bool]$para.fixo }; continue }
                             $lista += $i; $novos++; $verif++
                         }
                     }
@@ -525,6 +543,15 @@ foreach ($t in $config.topicos) {
     }
 }
 
+# --- discos reencaminhados (ex.: "garage punk" -> Garage) ---
+foreach ($o in $outros) {
+    $tp = $resultado | Where-Object { $_.nome -eq $o.para } | Select-Object -First 1
+    if (-not $tp) { continue }
+    if (@($tp.itens | Where-Object { $_.id -eq $o.item.id }).Count -eq 0) { $tp.itens = @($tp.itens) + $o.item }
+    if ($o.fixo) { $fixos[$o.item.id] = $o.para }
+}
+if ($outros.Count -gt 0) { Write-Host "Reencaminhados para outro genero: $($outros.Count)" }
+
 # --- Discogs: acrescenta generos a cada disco ---
 # Quem manda e o eBay: o disco fica sempre nos generos onde foi encontrado (titulo, descricao,
 # caracteristicas). O Discogs so ACRESCENTA: se o style dele for de outro topico (ex.: um
@@ -543,6 +570,7 @@ if (-not $Demo -and $config.discogs.confirmarTodos) {
             $extra = @($config.topicos | Where-Object { $origem -notcontains $_.nome -and (Decidir-Lista $ed $_.estilosDiscogs) -eq $true } | ForEach-Object { $_.nome })
             if ($extra.Count -gt 0) { $destino += $extra; $mudados++ }
         }
+        if ($fixos.ContainsKey($id)) { $destino = @($fixos[$id]) }
         foreach ($n in $destino) { [void]$novaLista[$n].Add($i) }
     }
     foreach ($tp in $resultado) { $tp.itens = @($novaLista[$tp.nome]) }
