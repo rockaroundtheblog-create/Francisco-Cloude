@@ -247,7 +247,7 @@ function lista(all){
   let it=all.filter(i=>emTopico(i)&&(!$("soNovos").checked||i.novo)&&(!$("so24").checked||(i.fim&&new Date(i.fim)-agora<864e5))&&(!f||i.titulo.toLowerCase().includes(f)));
   const o=$("ordem").value;
   const fimMs=i=>i.fim?new Date(i.fim).getTime():Infinity;
-  it.sort(o==="precoDesc"?(a,b)=>emEuros(b)-emEuros(a):o==="precoAsc"?(a,b)=>emEuros(a)-emEuros(b):o==="bids"?(a,b)=>(b.licitacoes||0)-(a.licitacoes||0):o==="obs"?(a,b)=>(b.observadores||0)-(a.observadores||0):(a,b)=>fimMs(a)-fimMs(b));
+  it.sort(o==="precoDesc"?(a,b)=>emEuros(b)-emEuros(a):o==="precoAsc"?(a,b)=>emEuros(a)-emEuros(b):o==="bids"?(a,b)=>(b.licitacoes||0)-(a.licitacoes||0):o==="obs"?(a,b)=>{const x=a.observadores==null,y=b.observadores==null;return x!==y?(x?1:-1):(b.observadores||0)-(a.observadores||0)||fimMs(a)-fimMs(b)}:(a,b)=>fimMs(a)-fimMs(b));
   const L=$("list");L.innerHTML="";L.classList.remove("vazio");L.classList.toggle("grid",vista==="fotos");
   if(!it.length){L.innerHTML='<div class="empty">No auctions match these filters.</div>';return}
   // so se desenham os primeiros "mostrar" discos; o resto aparece com "Show more" (pagina mais leve)
