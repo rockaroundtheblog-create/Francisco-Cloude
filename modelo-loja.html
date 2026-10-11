@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="only light">
-<title>45 Records Shop</title>
+<title>45 Records · My Shop</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One+SC&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Loja: os discos a venda no Discogs, com o mesmo aspeto da pagina dos leiloes. */
@@ -34,10 +34,14 @@ h1 .sub{display:block;font-size:.42em;color:var(--laranja);letter-spacing:.06em;
 /* navegacao entre as duas paginas */
 .nav{display:flex;justify-content:center;gap:10px;margin:0 0 18px}
 .nav a{font-family:var(--display);font-size:16px;letter-spacing:.04em;text-decoration:none;color:var(--creme);border:2px solid var(--creme);border-radius:999px;padding:5px 18px}
-.nav a[aria-current="page"]{background:var(--laranja);border-color:var(--laranja)}
+.nav a.n-leiloes{border-color:var(--petroleo);color:var(--petroleo)}
+.nav a[aria-current="page"]{background:var(--laranja);border-color:var(--laranja);color:var(--creme)}
+.aviso{max-width:760px;margin:-6px auto 16px;text-align:center;font-size:13.5px;color:var(--nevoa)}
+.aviso b{color:var(--creme)}
+.aviso .etq{display:inline-block;font-family:var(--display);font-size:12px;letter-spacing:.06em;background:var(--laranja);color:#000;border-radius:5px;padding:0 7px;margin-right:8px;vertical-align:1px}
 .nav a:hover{background:rgba(238,241,220,.1)}
 .nav a[aria-current="page"]:hover{background:var(--laranja)}
-.vend{text-align:center;font-size:13.5px;color:var(--nevoa);margin:-6px 0 16px}
+.vend{text-align:center;font-size:13.5px;color:var(--nevoa);margin:-8px 0 16px}
 .vend a{color:var(--pele)}
 .estilos{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:0 0 14px;padding-top:14px;border-top:1px solid #3b3a33}
 .estilos .rotulo{flex-basis:100%;text-align:center;font-family:var(--display);font-size:18px;letter-spacing:.04em;color:var(--petroleo);margin-bottom:2px}
@@ -88,13 +92,14 @@ details.envio pre{white-space:pre-wrap;font:13px/1.55 var(--mono);color:var(--cr
   <header>
     <img class="logo" id="logo" src="player.gif" alt="" width="205" height="257">
     <div>
-      <h1><span class="n">45</span> Records Shop <span class="marca">on Discogs</span><span class="sub" id="sub">Records for sale</span></h1>
+      <h1><span class="n">45</span> Records<span class="sub" id="sub">Records for sale</span></h1>
     </div>
   </header>
   <nav class="nav" aria-label="Pages">
-    <a href="index.html">Auctions</a>
-    <a href="loja.html" aria-current="page">Shop</a>
+    <a href="index.html" class="n-leiloes">eBay Auctions</a>
+    <a href="loja.html" class="n-loja" aria-current="page">My Shop</a>
   </nav>
+  <p class="aviso"><span class="etq">Mine</span>My own records for sale — <b>sold and shipped by me</b> from Portugal through Discogs. Each photo opens the record on Discogs.</p>
   <div class="vend" id="vend"></div>
   <div class="estilos" id="estilos"></div>
   <div class="bar">
@@ -123,7 +128,7 @@ const NOVO=7*864e5;
 function render(){
   if(!D){$("list").innerHTML='<div class="empty">This page is the template. Run loja.ps1 to build loja.html.</div>';return}
   const v=D.vendedor;
-  $("sub").textContent="Records for sale by "+v.nome;
+  $("sub").textContent="My own records for sale · "+v.nome;
   const vd=$("vend");vd.textContent="";
   const a=Object.assign(document.createElement("a"),{href:v.url,target:"_blank",rel:"noopener"});a.textContent=v.nome+" on Discogs";
   vd.append(a);if(v.nota)vd.append(` · ${v.nota}% positive (${v.avaliacoes} ratings)`);

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="only light">
-<title>45 Records Auction in eBay</title>
+<title>45 Records · eBay Auctions</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One+SC&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: cabeçalho, resumo, separadores, grelha de leilões; blocos creme sobre fundo preto.
@@ -45,9 +45,25 @@ h1 .sub{display:block;font-size:.42em;color:var(--laranja);letter-spacing:.06em;
 header{margin-bottom:14px}
 .nav{display:flex;justify-content:center;gap:10px;margin:0 0 18px}
 .nav a{font-family:var(--display);font-size:16px;letter-spacing:.04em;text-decoration:none;color:var(--creme);border:2px solid var(--creme);border-radius:999px;padding:5px 18px}
-.nav a[aria-current="page"]{background:var(--laranja);border-color:var(--laranja)}
+/* leiloes do eBay = petroleo; a minha loja = laranja (as duas paginas distinguem-se pela cor) */
+.nav a.n-leiloes[aria-current="page"]{background:var(--petroleo);border-color:var(--petroleo)}
+.nav a.n-loja{border-color:var(--laranja);color:var(--laranja)}
 .nav a:hover{background:rgba(238,241,220,.1)}
-.nav a[aria-current="page"]:hover{background:var(--laranja)}
+.nav a.n-leiloes[aria-current="page"]:hover{background:var(--petroleo)}
+.aviso{max-width:760px;margin:-6px auto 18px;text-align:center;font-size:13.5px;color:var(--nevoa)}
+.aviso b{color:var(--creme)}
+.aviso .etq{display:inline-block;font-family:var(--display);font-size:12px;letter-spacing:.06em;background:var(--petroleo);color:#000;border-radius:5px;padding:0 7px;margin-right:8px;vertical-align:1px}
+/* ecra inicial: os dois lados do site */
+.entrada{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;width:100%;max-width:820px;margin-top:6px}
+.porta{border:2px solid var(--petroleo);border-radius:18px;padding:18px 20px;text-align:left;font-family:var(--body);font-size:14.5px;color:var(--creme);display:flex;flex-direction:column;gap:8px}
+.porta h2{margin:0;font-family:var(--display);font-weight:400;font-size:22px;letter-spacing:.03em;color:var(--petroleo)}
+.porta p{margin:0;color:var(--nevoa)}
+.porta p b{color:var(--creme)}
+.porta .acao{margin-top:auto;font-family:var(--display);font-size:15px;letter-spacing:.04em;color:var(--petroleo)}
+.porta.loja{border-color:var(--laranja)}
+.porta.loja h2{color:var(--laranja)}
+.porta.loja .acao{align-self:flex-start;text-decoration:none;color:#000;background:var(--laranja);border-radius:999px;padding:5px 16px}
+.porta.loja .acao:hover{background:var(--pele)}
 .banner{margin-top:14px;padding:10px 14px;border-radius:10px;background:#000;color:var(--creme);border:2px solid #3b3a33;font-size:14px;border-left:6px solid var(--pele)}
 .banner.err{border-left-color:var(--laranja);color:var(--pele)}
 #banners:not(:empty){margin:-8px 0 22px}
@@ -165,13 +181,14 @@ input[type=search]::placeholder{color:var(--nevoa)}
   <header>
     <img class="logo" id="logo" src="player.gif" alt="" width="205" height="257">
     <div>
-      <h1><span class="n">45</span> Records Auction <span class="marca">in eBay</span><span class="sub">Garage · Psych · Rockabilly · Power Pop · Punk</span></h1>
+      <h1><span class="n">45</span> Records<span class="sub">Garage · Psych · Rockabilly · Power Pop · Punk</span></h1>
     </div>
   </header>
   <nav class="nav" aria-label="Pages">
-    <a href="index.html" aria-current="page">Auctions</a>
-    <a href="loja.html">Shop</a>
+    <a href="index.html" class="n-leiloes" aria-current="page">eBay Auctions</a>
+    <a href="loja.html" class="n-loja">My Shop</a>
   </nav>
+  <p class="aviso"><span class="etq">eBay</span>Auctions listed on eBay by <b>other sellers</b> — these are not my records. Each photo opens the auction on eBay, where bids and purchases happen.</p>
   <div id="banners"></div>
   <div class="tabs" id="tabs"></div>
   <div class="paises" id="paises" hidden></div>
@@ -234,7 +251,12 @@ function render(){
     x.append(l);x.onclick=()=>{if(topico!==v){topico=v;paisSel=null}mostrar=POR_PAGINA;render()};$("tabs").append(x)});
   $("ferramentas").hidden=!topico;$("logo").hidden=!topico;  if(!topico){
     $("paises").hidden=true;$("lateral").hidden=true;
-    const L=$("list");L.classList.remove("grid");L.classList.add("vazio");$("logo").hidden=true;L.innerHTML='<div class="escolha"><img class="logo-grande" alt="" src="'+$("logo").getAttribute("src")+'"><div>Choose a genre above to see its auctions</div></div>';return;
+    const L=$("list");L.classList.remove("grid");L.classList.add("vazio");$("logo").hidden=true;const nAll=all.length;
+    L.innerHTML='<div class="escolha"><img class="logo-grande" alt="" src="'+$("logo").getAttribute("src")+'">'+
+      '<div class="entrada">'+
+      '<div class="porta"><h2>eBay Auctions</h2><p>'+nAll+' live auctions of 7" singles from <b>other sellers on eBay</b>, all over the world. <b>Not my records</b>: each photo opens the auction on eBay.</p><div class="acao">↑ Choose a genre above</div></div>'+
+      '<div class="porta loja"><h2>My Shop</h2><p><b>My own records</b> for sale on Discogs, sold and shipped by me from Portugal.</p><a class="acao" href="loja.html">Visit my shop →</a></div>'+
+      '</div></div>';return;
   }
   // botoes de pais: so os paises que existem neste genero, do que tem mais leiloes para o que tem menos
   const doGenero=all.filter(i=>i._ts.includes(topico));
