@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="only light">
+<title>45 Records Shop</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One+SC&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Loja: os discos a venda no Discogs, com o mesmo aspeto da pagina dos leiloes. */
+:root{
+  --creme:#eef1dc; --nevoa:#b8b39d; --laranja:#e5743a; --petroleo:#1f9d98; --petroleo2:#16807c; --pele:#f1e49c;
+  --display:"Bowlby One SC","Arial Black",Impact,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  color-scheme:dark;
+}
+html{background:#000;color-scheme:dark}
+@media (prefers-color-scheme:dark){html,body{background-color:#000;color:#eef1dc}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;color:var(--creme);font:15px/1.5 var(--body);background-color:#000;
+  background-image:radial-gradient(rgba(238,241,220,.06) 1px,transparent 1.3px);background-size:6px 6px;background-attachment:fixed}
+.wrap{max-width:1000px;margin:0 auto;padding:28px 16px 48px}
+header{position:relative;display:flex;align-items:center;gap:18px;flex-wrap:wrap;background:#000;border:2px solid #3b3a33;
+  border-radius:28px 34px 30px 26px;padding:16px 22px;margin-bottom:14px}
+.logo{flex:none;height:110px;width:auto;max-width:100%;display:block}
+@media (max-width:560px){.logo{height:80px}}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(26px,5.4vw,42px);line-height:1;margin:0;color:var(--creme);letter-spacing:.01em}
+h1 .n{color:var(--laranja)}
+h1 .marca{font-size:31px;color:var(--petroleo);white-space:nowrap}
+@media (max-width:560px){h1 .marca{font-size:.74em}}
+h1 .sub{display:block;font-size:.42em;color:var(--laranja);letter-spacing:.06em;margin-top:6px}
+/* navegacao entre as duas paginas */
+.nav{display:flex;justify-content:center;gap:10px;margin:0 0 18px}
+.nav a{font-family:var(--display);font-size:16px;letter-spacing:.04em;text-decoration:none;color:var(--creme);border:2px solid var(--creme);border-radius:999px;padding:5px 18px}
+.nav a[aria-current="page"]{background:var(--laranja);border-color:var(--laranja)}
+.nav a:hover{background:rgba(238,241,220,.1)}
+.nav a[aria-current="page"]:hover{background:var(--laranja)}
+.vend{text-align:center;font-size:13.5px;color:var(--nevoa);margin:-6px 0 16px}
+.vend a{color:var(--pele)}
+.estilos{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:0 0 14px;padding-top:14px;border-top:1px solid #3b3a33}
+.estilos .rotulo{flex-basis:100%;text-align:center;font-family:var(--display);font-size:18px;letter-spacing:.04em;color:var(--petroleo);margin-bottom:2px}
+.estilos .rotulo+.tab~.rotulo,.estilos .tab+.rotulo{margin-top:10px}
+.tab{font:inherit;font-size:14px;font-weight:600;border:2px solid var(--creme);background:transparent;color:var(--creme);border-radius:999px;padding:4px 13px;cursor:pointer}
+.tab:hover{background:rgba(238,241,220,.1)}
+.tab[aria-pressed="true"]{background:var(--petroleo);border-color:var(--petroleo)}
+.tab small{margin-left:4px;font-variant-numeric:tabular-nums;color:var(--laranja)}
+.tab[aria-pressed="true"] small{color:var(--creme)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end;margin-bottom:16px}
+input[type=search],select{font:inherit;font-size:14px;color:var(--creme);background:#000;border:2px solid var(--creme);border-radius:8px;padding:5px 9px}
+select option{background:#111;color:var(--creme)}
+input[type=search]{width:200px;max-width:100%}
+input[type=search]::placeholder{color:var(--nevoa)}
+:focus-visible{outline:3px solid var(--laranja);outline-offset:2px}
+.conta{font-size:13px;color:var(--nevoa);margin-right:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
+.card{display:flex;flex-direction:column;background:#000;border:2px solid #3b3a33;border-radius:14px;overflow:hidden;min-width:0}
+.card .photo{position:relative;display:block;aspect-ratio:1;max-width:100%;background:#1a1918;border-bottom:2px solid #3b3a33}
+.card .photo img{width:100%;height:100%;object-fit:cover;display:block}
+.card .photo:hover img{opacity:.88}
+.ph{width:100%;height:100%;background:radial-gradient(circle,var(--creme) 0 8%,var(--laranja) 9% 32%,#120909 33% 100%)}
+.card .photo .badge{position:absolute;top:8px;left:8px}
+.badge{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:1px 6px;border-radius:4px;background:var(--laranja);color:var(--creme)}
+.info{padding:9px 11px 11px;display:flex;flex-direction:column;gap:2px;flex:1}
+.art{font-size:12.5px;font-weight:600;color:var(--pele);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tit{font-size:12.5px;line-height:1.35;font-weight:500;color:var(--creme);text-decoration:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tit:hover{color:var(--pele)}
+.det{font-size:11.5px;color:var(--nevoa);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cond{font-size:11.5px;color:var(--nevoa)}
+.cond b{color:var(--creme);font-weight:600}
+.sty{font-size:11px;color:var(--petroleo);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fim{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:auto;padding-top:6px}
+.price{font-family:var(--mono);font-weight:600;font-size:15px;color:var(--laranja);font-variant-numeric:tabular-nums}
+.price .orig{font-family:var(--body);font-weight:400;font-size:11px;color:var(--nevoa)}
+.comprar{font-size:12px;font-weight:700;color:#000;background:var(--petroleo);border-radius:999px;padding:3px 10px;text-decoration:none;white-space:nowrap}
+.comprar:hover{background:var(--pele)}
+.quer{font-size:11px;color:var(--nevoa)}
+.empty{grid-column:1/-1;padding:28px;text-align:center;color:var(--nevoa)}
+details.envio{margin-top:28px;border:2px solid #3b3a33;border-radius:14px;padding:12px 16px}
+details.envio summary{cursor:pointer;font-family:var(--display);font-size:16px;letter-spacing:.04em;color:var(--petroleo)}
+details.envio pre{white-space:pre-wrap;font:13px/1.55 var(--mono);color:var(--creme);margin:10px 0 0}
+.rodape{margin-top:30px;padding-top:14px;border-top:1px solid #3b3a33;text-align:center;font-size:12px;color:var(--nevoa)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img class="logo" id="logo" src="player.gif" alt="" width="205" height="257">
+    <div>
+      <h1><span class="n">45</span> Records Shop <span class="marca">on Discogs</span><span class="sub" id="sub">Records for sale</span></h1>
+    </div>
+  </header>
+  <nav class="nav" aria-label="Pages">
+    <a href="index.html">Auctions</a>
+    <a href="loja.html" aria-current="page">Shop</a>
+  </nav>
+  <div class="vend" id="vend"></div>
+  <div class="estilos" id="estilos"></div>
+  <div class="bar">
+    <span class="conta" id="conta"></span>
+    <input type="search" id="filtro" placeholder="Search artist, title, label…" aria-label="Search">
+    <select id="ordem" aria-label="Sort">
+      <option value="novo">Newest listed</option>
+      <option value="precoAsc">Lowest price</option>
+      <option value="precoDesc">Highest price</option>
+      <option value="artista">Artist A–Z</option>
+      <option value="ano">Year (oldest first)</option>
+      <option value="quer">Most wanted on Discogs</option>
+    </select>
+  </div>
+  <div class="grid" id="list"></div>
+  <details class="envio" id="envio" hidden><summary>Shipping &amp; payment</summary><pre id="envioTxt"></pre></details>
+  <footer class="rodape">Records sold through Discogs. Prices and availability are updated twice a day; the Discogs listing is always the final word.</footer>
+</div>
+<script>
+const D=/*DADOS*/null;
+const $=id=>document.getElementById(id);
+let genero=null, estilo=null;
+const money=(v,c)=>{try{return new Intl.NumberFormat("en-GB",{style:"currency",currency:c||"EUR"}).format(v)}catch{return v+" "+c}};
+// "novo" = posto a venda nos ultimos 7 dias
+const NOVO=7*864e5;
+function render(){
+  if(!D){$("list").innerHTML='<div class="empty">This page is the template. Run loja.ps1 to build loja.html.</div>';return}
+  const v=D.vendedor;
+  $("sub").textContent="Records for sale by "+v.nome;
+  const vd=$("vend");vd.textContent="";
+  const a=Object.assign(document.createElement("a"),{href:v.url,target:"_blank",rel:"noopener"});a.textContent=v.nome+" on Discogs";
+  vd.append(a);if(v.nota)vd.append(` · ${v.nota}% positive (${v.avaliacoes} ratings)`);
+  if(v.envio||v.pagamento){$("envio").hidden=false;$("envioTxt").textContent=(v.pagamento?"Payment: "+v.pagamento+"\n\n":"")+v.envio}
+  botoes();
+  lista();
+}
+// 1.a linha: generos do Discogs (Rock, Pop, Latin...); 2.a linha: os styles do genero escolhido
+function botoes(){
+  const E=$("estilos");E.innerHTML="";
+  const linha=(rotulo,mapa,sel,total,escolher)=>{
+    const rot=document.createElement("div");rot.className="rotulo";rot.textContent=rotulo;E.append(rot);
+    const botao=(k,txt,n)=>{const x=document.createElement("button");x.className="tab";x.type="button";x.setAttribute("aria-pressed",k===sel);
+      x.append(txt);const sm=document.createElement("small");sm.textContent=n;x.append(sm);x.onclick=()=>{escolher(k);botoes();lista()};E.append(x)};
+    botao(null,"All",total);
+    [...mapa.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).forEach(([k,n])=>botao(k,k,n));
+  };
+  const cg=new Map();for(const i of D.itens)for(const g of i.generos)cg.set(g,(cg.get(g)||0)+1);
+  if(genero&&!cg.has(genero))genero=null;
+  linha("Genre",cg,genero,D.itens.length,k=>{genero=k;estilo=null});
+  if(genero){
+    const doG=D.itens.filter(i=>i.generos.includes(genero));
+    const cs=new Map();for(const i of doG)for(const s of i.styles)cs.set(s,(cs.get(s)||0)+1);
+    if(cs.size>1)linha("Style",cs,estilo,doG.length,k=>{estilo=k});
+  }
+}
+function lista(){
+  const f=$("filtro").value.trim().toLowerCase();
+  let it=D.itens.filter(i=>(!genero||i.generos.includes(genero))&&(!estilo||i.styles.includes(estilo))&&
+    (!f||[i.artista,i.titulo,i.editora,i.cat].join(" ").toLowerCase().includes(f)));
+  const o=$("ordem").value;
+  it.sort(o==="precoAsc"?(a,b)=>a.preco-b.preco:o==="precoDesc"?(a,b)=>b.preco-a.preco:o==="artista"?(a,b)=>a.artista.localeCompare(b.artista)||a.titulo.localeCompare(b.titulo):
+    o==="ano"?(a,b)=>(a.ano||9999)-(b.ano||9999):o==="quer"?(a,b)=>b.quer-a.quer:(a,b)=>new Date(b.posto)-new Date(a.posto));
+  $("conta").textContent=it.length===1?"1 record":it.length+" records";
+  const L=$("list");L.innerHTML="";
+  if(!it.length){L.innerHTML='<div class="empty">No records match.</div>';return}
+  for(const i of it)L.append(cartao(i));
+}
+function cartao(i){
+  const c=document.createElement("div");c.className="card";
+  const nome=i.artista+" – "+i.titulo;
+  const a=Object.assign(document.createElement("a"),{className:"photo",href:i.url,target:"_blank",rel:"noopener",title:nome});
+  a.append(i.img?Object.assign(document.createElement("img"),{src:i.img,alt:nome,loading:"lazy"}):Object.assign(document.createElement("div"),{className:"ph"}));
+  if(i.posto&&Date.now()-new Date(i.posto)<NOVO){const n=document.createElement("span");n.className="badge";n.textContent="new";a.append(n)}
+  const inf=document.createElement("div");inf.className="info";
+  const ar=document.createElement("div");ar.className="art";ar.textContent=i.artista;
+  const t=Object.assign(document.createElement("a"),{className:"tit",href:i.url,target:"_blank",rel:"noopener"});t.textContent=i.titulo;
+  const d=document.createElement("div");d.className="det";d.textContent=[i.editora,i.cat,i.ano,i.pais].filter(Boolean).join(" · ");d.title=d.textContent+(i.formato?" · "+i.formato:"");
+  const cd=document.createElement("div");cd.className="cond";
+  cd.innerHTML='Record <b></b>'+(i.capa?' · Sleeve <b></b>':'');cd.children[0].textContent=i.disco;if(i.capa)cd.children[1].textContent=i.capa;
+  inf.append(ar,t,d,cd);
+  const st=(i.styles.length?i.styles:i.generos).join(", ");
+  if(st){const s=document.createElement("div");s.className="sty";s.textContent=st;s.title=st;inf.append(s)}
+  if(i.quer){const q=document.createElement("div");q.className="quer";q.textContent=i.quer+" want this on Discogs";inf.append(q)}
+  const fim=document.createElement("div");fim.className="fim";
+  const p=document.createElement("span");p.className="price";p.textContent=money(i.preco,i.moeda);
+  const b=Object.assign(document.createElement("a"),{className:"comprar",href:i.url,target:"_blank",rel:"noopener"});b.textContent="Buy";
+  fim.append(p,b);inf.append(fim);
+  c.append(a,inf);return c;
+}
+$("filtro").addEventListener("input",lista);
+$("ordem").addEventListener("change",lista);
+render();
+</script>
+</body>
+</html>

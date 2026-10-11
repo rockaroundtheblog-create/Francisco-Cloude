@@ -41,6 +41,13 @@ h1 .marca{font-size:31px;color:var(--petroleo);white-space:nowrap}
 @media (max-width:560px){h1 .marca{font-size:.74em}}
 h1 .sub{display:block;font-size:.42em;color:var(--laranja);letter-spacing:.06em;margin-top:6px}
 
+/* navegacao entre as duas paginas (leiloes / loja) */
+header{margin-bottom:14px}
+.nav{display:flex;justify-content:center;gap:10px;margin:0 0 18px}
+.nav a{font-family:var(--display);font-size:16px;letter-spacing:.04em;text-decoration:none;color:var(--creme);border:2px solid var(--creme);border-radius:999px;padding:5px 18px}
+.nav a[aria-current="page"]{background:var(--laranja);border-color:var(--laranja)}
+.nav a:hover{background:rgba(238,241,220,.1)}
+.nav a[aria-current="page"]:hover{background:var(--laranja)}
 .banner{margin-top:14px;padding:10px 14px;border-radius:10px;background:#000;color:var(--creme);border:2px solid #3b3a33;font-size:14px;border-left:6px solid var(--pele)}
 .banner.err{border-left-color:var(--laranja);color:var(--pele)}
 #banners:not(:empty){margin:-8px 0 22px}
@@ -161,6 +168,10 @@ input[type=search]::placeholder{color:var(--nevoa)}
       <h1><span class="n">45</span> Records Auction <span class="marca">in eBay</span><span class="sub">Garage · Psych · Rockabilly · Power Pop · Punk</span></h1>
     </div>
   </header>
+  <nav class="nav" aria-label="Pages">
+    <a href="index.html" aria-current="page">Auctions</a>
+    <a href="loja.html">Shop</a>
+  </nav>
   <div id="banners"></div>
   <div class="tabs" id="tabs"></div>
   <div class="paises" id="paises" hidden></div>
