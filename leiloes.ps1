@@ -320,6 +320,9 @@ $reTextoLP = '\b((\d+\s*x?\s*)?lps?|33\s*(rpm|tours|giri|u/?min)|12\s*("|' + $as
 $reGrande = '^\s*(10|12)\s*("|' + $aspa + '|in|inch|zoll)'
 # no titulo tambem conta "45" sozinho (ex.: "garage 45", "45s", "45er")
 $reTitulo45 = $reTexto45 + '|\b45(s|er)?\b'
+$re7Titulo = '\b7\s*("|' + $aspa + '|''''|-?inch|-?zoll|pouces|pollici|pulgadas)'
+# LP / 10" / 12" / album no titulo (sem \b depois das aspas: "12" Vinyl" tambem conta)
+$reGrandeTitulo = '\b(10|12)\s*("|' + $aspa + '|''''|-?inch|-?zoll|pouces|pollici|pulgadas|in\b)|\b(\d+\s*x?\s*)?lps?\b(?!-)|\balbum\b|\b33\s*(rpm|tours|giri|u/?min)|\bmaxi\b'
 function E-Single($det) {
     foreach ($a in @($det.localizedAspects)) {
         $v = [string]$a.value
@@ -558,8 +561,10 @@ foreach ($t in $config.topicos) {
                         if (-not $num -or $ids.ContainsKey($num)) { continue }
                         if (Excluido $s.title $t.excluir) { continue }
                         $single = $cand[$num].single
+                        # 12" / 10" / LP / album no titulo (e sem 7"): fica de fora, mesmo que seja 45 rpm
+                        # (ex.: "G-Dubs Forever (In My Mind) 12" Vinyl White")
+                        if ($s.title -match $reGrandeTitulo -and $s.title -notmatch $re7Titulo) { continue }
                         if ($s.title -match $reTitulo45) { $single = $true }                # 7" / 45 / single no titulo
-                        elseif ($null -eq $single -and $s.title -match $reTextoLP) { continue } # LP / 12" / album no titulo
 
                         if ($s.title -match $reGen) {
                             # A) genero no titulo: falta so confirmar que e single (detalhes do anuncio, ou Discogs)
