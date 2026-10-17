@@ -363,28 +363,49 @@ $ruidoTitulo = @('rare','vg','vg+','ex','nm','m-','mint','near','promo','dj','wl
     'tours','giri','disque','schallplatte','disco','singles','lot','lote','bundle','collection','set')
 
 function Limpar-Titulo($titulo) {
-    $t = $titulo.ToLowerInvariant() -replace ('[~\-/\\|*!(),.:;"''_+#' + $aspasTodas + ']'), ' '
+    # apostrofos saem sem deixar espaco ("Dawn's" -> "dawns"); o resto da pontuacao vira espaco
+    $t = $titulo.ToLowerInvariant() -replace ("['" + [char]0x2019 + [char]0x2018 + ']'), ''
+    $t = $t -replace ('[~\-/\\|*!(),.:;"_+#' + $aspasTodas + ']'), ' '
     # tambem fora: "2singles", "60er", "70ersammlung", "sammlung" (lotes/colecoes em alemao e afins)
     $palavras = @($t -split '\s+' | Where-Object { $_.Length -gt 1 -and ($ruidoTitulo -notcontains $_) -and ($_ -notmatch '^\d{2,4}s?$') -and
         ($_ -notmatch '^\d*(singles?|er|ers|x)$') -and ($_ -notmatch 'sammlung|konvolut') })
     return (($palavras | Select-Object -First 8) -join ' ')
 }
 
-# Edicoes do Discogs que sao o mesmo disco do anuncio: as que tem a maioria das palavras
-# do titulo (o mesmo disco, nao so o mesmo artista). Devolve formato e style de cada uma.
+# Texto so com letras/numeros, sem apostrofos ("Dawn's" -> "dawns")
+function Normalizar($s) {
+    $x = ([string]$s).ToLowerInvariant() -replace ("['" + [char]0x2019 + [char]0x2018 + ']'), ''
+    ($x -replace '[^\p{L}\p{N}]+', ' ').Trim()
+}
+$palavrasVazias = @('the','and','les','los','las','des','der','die','das','his','her','with','for','you','your','are','was','not','but','all','par','con','und','von')
+
+# Edicoes do Discogs que sao o mesmo disco do anuncio. Cada resultado do Discogs e "Artista - Titulo":
+#  - o ARTISTA tem de estar todo no titulo do eBay (senao "Ivy League My" apanha "J Church - Ivy League
+#    College", e "Dawns Early Light" apanha discos de house com "early light" no nome);
+#  - e pelo menos metade das palavras do TITULO do disco tambem (o mesmo disco, nao so o mesmo artista).
+# Se nenhum resultado tiver o titulo mas o artista tiver 2+ palavras (nome distinto, ex.: "Dawn's Early
+# Light"), servem os discos desse artista (o anuncio muitas vezes nao diz o nome da musica).
+# ($comparar/$fator ficam por compatibilidade)
 function Correspondencias($consulta, $resultados, $fator = 0.6) {
-    $palavras = @($consulta -split ' ' | Where-Object { $_.Length -gt 2 })
-    if ($palavras.Count -eq 0) { return @() }
-    $minimo = [Math]::Max(2, [Math]::Ceiling($palavras.Count * $fator))
-    $minimo = [Math]::Min($minimo, $palavras.Count)
-    $lista = @()
+    $q = ' ' + (Normalizar $consulta) + ' '
+    $tem = { param($w) $q.Contains(' ' + $w + ' ') -or ($w.Length -ge 5 -and $q.Contains($w)) }
+    $fortes = @(); $doArtista = @()
     foreach ($r in @($resultados)) {
-        $rt = ([string]$r.title).ToLowerInvariant()
-        $comuns = @($palavras | Where-Object { $rt.Contains($_) }).Count
-        if ($comuns -lt $minimo) { continue }
-        $lista += [pscustomobject]@{ f = (@($r.format) -join '|'); s = (@($r.style) -join '|') }
+        $partes = ([string]$r.title) -split ' - ', 2
+        if ($partes.Count -lt 2) { continue }
+        $artista = Normalizar (($partes[0] -replace '\(\d+\)', '' -replace '\*', ''))
+        if ($artista -match '^(various|unknown artist)') { continue }
+        $pa = @($artista -split ' ' | Where-Object { $_.Length -gt 2 -and $palavrasVazias -notcontains $_ })
+        if ($pa.Count -eq 0) { $pa = @($artista -split ' ' | Where-Object { $_ }) }   # artistas de nome curto ("U2", "XTC")
+        if ($pa.Count -eq 0 -or @($pa | Where-Object { -not (& $tem $_) }).Count -gt 0) { continue }
+        $item = [pscustomobject]@{ f = (@($r.format) -join '|'); s = (@($r.style) -join '|') }
+        $pt = @((Normalizar $partes[1]) -split ' ' | Where-Object { $_.Length -gt 2 -and $palavrasVazias -notcontains $_ })
+        $comuns = @($pt | Where-Object { & $tem $_ }).Count
+        if ($pt.Count -eq 0 -or $comuns -ge [Math]::Ceiling($pt.Count / 2)) { $fortes += $item }
+        elseif ($pa.Count -ge 2) { $doArtista += $item }
     }
-    return $lista
+    if ($fortes.Count -gt 0) { return $fortes }
+    return $doArtista
 }
 
 # Decide a partir das edicoes encontradas e dos styles do topico (ex.: Garage Rock, Beat).
@@ -424,11 +445,11 @@ function Discogs-Edicoes($titulo) {
     # a cache guarda as edicoes encontradas; a decisao e feita de novo para cada topico
     # (uma resposta vazia antiga, sem "r", volta a ser procurada com a 2.a tentativa abaixo)
     $c = $null; if ($script:discogsCache.ContainsKey($consulta)) { $c = $script:discogsCache[$consulta] }
-    if ($c -and $null -ne $c.m -and (@($c.m).Count -gt 0 -or $c.r -or @($consulta -split ' ').Count -lt 4)) {
+    if ($c -and $c.v -eq 2 -and $null -ne $c.m) {
         return ,@($c.m)
     }
     $lista = @()
-    if (-not ($c -and $null -ne $c.m)) {
+    if ($true) {
         $lista = Discogs-Procurar $consulta
         if ($null -eq $lista) { return $null }
     }
@@ -442,7 +463,7 @@ function Discogs-Edicoes($titulo) {
         if ($null -eq $l2) { return $null }
         $lista = $l2
     }
-    $script:discogsCache[$consulta] = [pscustomobject]@{ m = $lista; d = $carimbo; r = 1 }
+    $script:discogsCache[$consulta] = [pscustomobject]@{ m = $lista; d = $carimbo; r = 1; v = 2 }
     return ,$lista
 }
 
@@ -459,7 +480,7 @@ function Discogs-Procurar($consulta, $comparar, $fator = 0.6) {
 }
 
 # So o formato: $true se o Discogs tem este disco em single Vinyl 7"/45, $false se so em LP/CD, $null se nao sabe
-# (decide pela maioria: "Love - Forever Changes" tem muitas edicoes em LP e quase nenhuma em 7" -> LP)
+# ("Love - Forever Changes" so existe em LP no Discogs -> LP)
 function Discogs-Formato($titulo) {
     $lista = Discogs-Edicoes $titulo
     if ($null -eq $lista) { return $null }
@@ -470,7 +491,9 @@ function Discogs-Formato($titulo) {
         elseif (@($formatos | Where-Object { 'LP', '12"', '10"', 'Album', 'CD', 'Cassette' -contains $_ }).Count -gt 0) { $grandes++ }
     }
     if ($singles -eq 0 -and $grandes -eq 0) { return $null }
-    return ($singles -gt 0 -and $singles -ge $grandes)
+    # basta haver o disco em single (as compilacoes em LP com o mesmo nome, ex.: "You're Gonna Miss Me",
+    # sao muitas mais); so e LP se o Discogs nao o tiver em single nenhum
+    return ($singles -gt 0)
 }
 
 function Discogs-Single($titulo, $estilos) {
