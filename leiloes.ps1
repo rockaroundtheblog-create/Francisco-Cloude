@@ -306,6 +306,14 @@ function Info-Detalhes($mercado, $num) {
     return @{ single = $single; generos = $gen }
 }
 
+# O titulo tem a palavra do genero? Antes tira os nomes de bandas e os outros generos que usam a
+# mesma palavra (config "ignorar", ex.: "Psychedelic Furs", "Daft Punk", "UK Garage"): nesses
+# casos e o Discogs que decide.
+function Genero-NoTitulo($t, $titulo, $reGen) {
+    $x = [string]$titulo
+    foreach ($ig in @($t.ignorar)) { if ($ig) { $x = $x -replace ('(?i)' + $ig), ' ' } }
+    return ($x -match $reGen)
+}
 # Regex com as palavras do genero (config "generos"), ex.: "(punk,kbd)" -> (punk|kbd)
 function Regex-Genero($t) {
     $palavras = ([string]$t.generos) -replace '[()"]', '' -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
@@ -364,10 +372,10 @@ function Limpar-Titulo($titulo) {
 
 # Edicoes do Discogs que sao o mesmo disco do anuncio: as que tem a maioria das palavras
 # do titulo (o mesmo disco, nao so o mesmo artista). Devolve formato e style de cada uma.
-function Correspondencias($consulta, $resultados) {
+function Correspondencias($consulta, $resultados, $fator = 0.6) {
     $palavras = @($consulta -split ' ' | Where-Object { $_.Length -gt 2 })
     if ($palavras.Count -eq 0) { return @() }
-    $minimo = [Math]::Max(2, [Math]::Ceiling($palavras.Count * 0.6))
+    $minimo = [Math]::Max(2, [Math]::Ceiling($palavras.Count * $fator))
     $minimo = [Math]::Min($minimo, $palavras.Count)
     $lista = @()
     foreach ($r in @($resultados)) {
@@ -428,7 +436,9 @@ function Discogs-Edicoes($titulo) {
     # procura so as 3 primeiras palavras (em geral o artista e o inicio do titulo)
     if ($lista.Count -eq 0 -and @($consulta -split ' ').Count -ge 4) {
         $curta = (@($consulta -split ' ') | Select-Object -First 3) -join ' '
-        $l2 = Discogs-Procurar $curta
+        # os resultados tem de ter, ainda assim, 40% das palavras do titulo completo (senao "Ivy League My"
+        # apanha "J Church - Ivy League College", outro disco)
+        $l2 = Discogs-Procurar $curta $consulta 0.4
         if ($null -eq $l2) { return $null }
         $lista = $l2
     }
@@ -437,21 +447,30 @@ function Discogs-Edicoes($titulo) {
 }
 
 # Um pedido ao Discogs; devolve as edicoes que correspondem a $consulta, ou $null (erro/limite)
-function Discogs-Procurar($consulta) {
+function Discogs-Procurar($consulta, $comparar, $fator = 0.6) {
     if ($script:discogsPedidos -ge $config.discogs.maxPorExecucao) { return $null }
     $script:discogsPedidos++
     Start-Sleep -Milliseconds 1100   # o Discogs aceita ~60 pedidos por minuto
     $url = 'https://api.discogs.com/database/search?type=release&per_page=10&q=' + [Uri]::EscapeDataString($consulta)
     $h = @{ Authorization = "Discogs token=$($script:chaves['DISCOGS_TOKEN'])"; 'User-Agent' = 'Leiloes45/1.0' }
     try { $r = Pedir-Json $url $h } catch { Write-Warning "Discogs: $($_.Exception.Message)"; return $null }
-    return ,@(Correspondencias $consulta $r.results)
+    if (-not $comparar) { $comparar = $consulta }
+    return ,@(Correspondencias $comparar $r.results $fator)
 }
 
 # So o formato: $true se o Discogs tem este disco em single Vinyl 7"/45, $false se so em LP/CD, $null se nao sabe
+# (decide pela maioria: "Love - Forever Changes" tem muitas edicoes em LP e quase nenhuma em 7" -> LP)
 function Discogs-Formato($titulo) {
     $lista = Discogs-Edicoes $titulo
     if ($null -eq $lista) { return $null }
-    return Decidir-Lista $lista @()
+    $singles = 0; $grandes = 0
+    foreach ($c in @($lista)) {
+        $formatos = @(([string]$c.f) -split '\|')
+        if (($formatos -contains 'Vinyl') -and (($formatos -contains '7"') -or ($formatos -contains '45 RPM')) -and -not ($formatos -contains 'LP') -and -not ($formatos -contains '12"')) { $singles++ }
+        elseif (@($formatos | Where-Object { 'LP', '12"', '10"', 'Album', 'CD', 'Cassette' -contains $_ }).Count -gt 0) { $grandes++ }
+    }
+    if ($singles -eq 0 -and $grandes -eq 0) { return $null }
+    return ($singles -gt 0 -and $singles -ge $grandes)
 }
 
 function Discogs-Single($titulo, $estilos) {
@@ -552,7 +571,7 @@ foreach ($t in $config.topicos) {
                     # 2) todos os leiloes com a palavra do genero (sem exigir 45): aqui so contam os que a tem no titulo
                     foreach ($s in (Pesquisar $m $generos $null -max $config.verificarDescricao.maxPesquisa)) {
                         $k = [string]$s.legacyItemId
-                        if (-not $cand.Contains($k) -and $s.title -match $reGen) { $cand[$k] = @{ s = $s; single = $null } }
+                        if (-not $cand.Contains($k) -and (Genero-NoTitulo $t $s.title $reGen)) { $cand[$k] = @{ s = $s; single = $null } }
                     }
 
                     $novos = 0; $pelaDiscogs = 0; $semFormato = 0; $naoDiscogs = 0
@@ -566,13 +585,20 @@ foreach ($t in $config.topicos) {
                         if ($s.title -match $reGrandeTitulo -and $s.title -notmatch $re7Titulo) { continue }
                         if ($s.title -match $reTitulo45) { $single = $true }                # 7" / 45 / single no titulo
 
-                        if ($s.title -match $reGen) {
-                            # A) genero no titulo: falta so confirmar que e single (detalhes do anuncio, ou Discogs)
-                            if ($null -eq $single) { $single = (Info-Detalhes $m $num).single }
-                            if ($null -eq $single) { $single = Discogs-Formato $s.title }
+                        if (Genero-NoTitulo $t $s.title $reGen) {
+                            # A) genero no titulo: falta confirmar que e single. Se o titulo nao diz o tamanho
+                            #    (7", 45, single...), quem confirma e o Discogs (ex.: "Love Forever Changes ...
+                            #    Psychedelic" e um LP, mesmo que o vendedor tenha posto "45 RPM" nas caracteristicas);
+                            #    so se o Discogs nao souber e que contam as caracteristicas/descricao do anuncio.
+                            if ($s.title -notmatch $reTitulo45) {
+                                $df = Discogs-Formato $s.title
+                                if ($null -ne $df) { $single = $df }
+                                elseif ($null -eq $single) { $single = (Info-Detalhes $m $num).single }
+                            }
                             if ($single -ne $true) { $semFormato++; continue }
                         } else {
                             # B) genero fora do titulo: o Discogs tem de dizer single E style deste genero
+                            if ($s.title -notmatch $reTitulo45 -and (Discogs-Formato $s.title) -eq $false) { $naoDiscogs++; continue }
                             if ((Discogs-Single $s.title $t.estilosDiscogs) -ne $true) { $naoDiscogs++; continue }
                             $pelaDiscogs++
                         }
@@ -623,6 +649,14 @@ if (-not $Demo -and $config.discogs.confirmarTodos) {
         $destino = @($resultado | Where-Object { @($_.itens | Where-Object { $_.id -eq $id }).Count -gt 0 } | ForEach-Object { $_.nome })
         if ($fixos.ContainsKey($id)) { $destino = @($fixos[$id]) }
         else {
+            # o titulo tambem manda nos outros generos: "TOP PSYCH*GARAGE*ROCK 7"" encontrado so na pesquisa
+            # de Psych entra tambem em Garage (as pesquisas do eBay nao apanham sempre tudo)
+            foreach ($tpo in $config.topicos) {
+                if (-not (Genero-NoTitulo $tpo $i.titulo (Regex-Genero $tpo))) { continue }
+                $r = Reencaminhar-Para $tpo $i.titulo
+                $nome = if ($r) { $r.para } else { $tpo.nome }
+                if ($destino -notcontains $nome) { $destino += $nome }
+            }
             $ed = Discogs-Edicoes $i.titulo
             if ($null -ne $ed -and @($ed).Count -gt 0) {
                 $extra = @($config.topicos | Where-Object { $destino -notcontains $_.nome -and (Decidir-Lista $ed $_.estilosDiscogs) -eq $true } |
