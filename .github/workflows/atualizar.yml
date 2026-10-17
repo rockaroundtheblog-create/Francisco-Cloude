@@ -1,14 +1,29 @@
-# Atualiza 45recordsauction.com duas vezes por dia e publica no GitHub Pages.
+# Atualiza 45recordsauction.com e publica no GitHub Pages.
 # Paginas: index.html (leiloes do eBay) e loja.html (discos a venda no Discogs).
+# Corre sozinho: duas vezes por dia, e tambem sempre que se carrega um ficheiro no repositorio.
+#  - carregou leiloes.ps1 ou config.json (ou e a hora marcada / Run workflow): pesquisa completa no eBay;
+#  - carregou so a pagina (modelo.html), os seguidores (observadores.json), a loja, o logo...:
+#    versao rapida - refaz a pagina com os leiloes que ja la estao, sem gastar pedidos ao eBay.
 # As chaves ficam em Settings > Secrets and variables > Actions (nunca no repositorio).
-# Sem as chaves do eBay, publica o index.html que esta no repositorio.
 name: Atualizar 45recordsauction.com
 
 on:
   schedule:
     - cron: '0 8 * * *'     # 08:00 UTC: depois de o eBay renovar o limite diario (meia-noite na California)
     - cron: '0 17 * * *'    # e as 17:00 UTC (18:00 em Portugal no verao, 17:00 no inverno)
-  workflow_dispatch:         # botao "Run workflow" para correr a mao
+  workflow_dispatch:         # botao "Run workflow" para correr a mao (pesquisa completa)
+  push:                      # ao carregar ficheiros (as gravacoes do proprio robot nao disparam isto)
+    branches: [main]
+    paths:
+      - 'leiloes.ps1'
+      - 'config.json'
+      - 'modelo.html'
+      - 'observadores.json'
+      - 'refazer.ps1'
+      - 'loja.ps1'
+      - 'modelo-loja.html'
+      - 'player.gif'
+      - 'index.html'
 
 permissions:
   contents: write
@@ -28,8 +43,24 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decidir (pesquisa completa ou versao rapida)
+        id: modo
+        shell: bash
+        run: |
+          modo=completo
+          if [ "${{ github.event_name }}" = "push" ]; then
+            mudou=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" 2>/dev/null || echo "leiloes.ps1")
+            echo "Ficheiros carregados: $mudou"
+            if ! echo "$mudou" | grep -qE '^(leiloes\.ps1|config\.json)$'; then modo=rapido; fi
+          fi
+          echo "Modo: $modo"
+          echo "modo=$modo" >> "$GITHUB_OUTPUT"
 
       - name: Procurar leiloes e gerar a pagina
+        if: steps.modo.outputs.modo == 'completo'
         shell: powershell
         env:
           EBAY_APP_ID: ${{ secrets.EBAY_APP_ID }}
@@ -45,6 +76,12 @@ jobs:
           ) | Set-Content -Path chaves.env -Encoding ascii
           .\leiloes.ps1 -Saida index.html
           Remove-Item chaves.env
+
+      - name: Refazer a pagina (versao rapida, sem pesquisar o eBay)
+        if: steps.modo.outputs.modo == 'rapido'
+        shell: powershell
+        run: |
+          .\refazer.ps1 -Pagina index.html
 
       # a loja nao impede a publicacao dos leiloes: se falhar, fica a loja anterior
       - name: Gerar a loja (discos a venda no Discogs)
@@ -63,7 +100,8 @@ jobs:
           for f in vistos.json discogs-cache.json discogs-discos.json lista-observados.json index.html loja.html; do
             if [ -f "$f" ]; then git add "$f"; fi
           done
-          git commit -m "Atualizacao diaria" || echo "Nada para guardar"
+          git commit -m "Atualizacao automatica" || echo "Nada para guardar"
+          git pull --rebase || echo "Pull falhou"
           git push || echo "Push falhou"
 
       - name: Preparar o site (so as paginas e o dominio)
