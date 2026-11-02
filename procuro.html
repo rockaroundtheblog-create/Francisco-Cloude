@@ -105,7 +105,6 @@ select option{background:#111}
   <main id="conteudo" hidden>
     <p class="resumo" id="resumo"></p>
     <div class="bar">
-      <select id="pesquisa" aria-label="Saved search"></select>
       <span class="info" id="info"></span>
       <select id="tipo" aria-label="Type">
         <option value="">Auctions &amp; Buy It Now</option>
@@ -170,10 +169,6 @@ function mostrar(){
   $("resumo").innerHTML="";const r=$("resumo");
   const b1=document.createElement("b");b1.textContent=all.length;r.append(b1," records found by ");
   const b2=document.createElement("b");b2.textContent=com.length;r.append(b2,` of my ${cont.length} saved searches`);
-  const S=$("pesquisa");S.innerHTML="";
-  S.append(new Option(`All searches (${all.length})`,""));
-  com.sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).forEach(([n,c])=>S.append(new Option(`${n} (${c})`,n)));
-  S.value=sel;
   lista();
 }
 function lista(){
@@ -212,7 +207,6 @@ function lista(){
   c.append(a,inf);return c;
 }
 ["tipo","ordem"].forEach(id=>$(id).addEventListener("change",()=>{mostrarN=POR_PAGINA;lista()}));
-$("pesquisa").addEventListener("change",()=>{sel=$("pesquisa").value;mostrarN=POR_PAGINA;lista()});
 $("filtro").addEventListener("input",()=>{mostrarN=POR_PAGINA;lista()});
 if(!C){$("erro").textContent="This page is the template. Run procuro.ps1 to build procuro.html."}
 else{let s=null;try{s=localStorage.getItem("w45:s")}catch{};if(s){$("lembrar").checked=true;entrar(s,true)}}
