@@ -24,6 +24,8 @@ on:
       - 'modelo-loja.html'
       - 'player.gif'
       - 'index.html'
+      - 'procuro.ps1'
+      - 'modelo-procuro.html'
 
 permissions:
   contents: write
@@ -92,12 +94,28 @@ jobs:
         run: |
           .\loja.ps1 -Saida loja.html
 
+      # pagina privada (pesquisas guardadas do eBay, encriptada com a palavra-passe PROCURO_SENHA);
+      # so nas pesquisas completas. Se falhar, fica a anterior.
+      - name: Gerar a pagina privada (pesquisas guardadas)
+        if: steps.modo.outputs.modo == 'completo'
+        shell: powershell
+        continue-on-error: true
+        env:
+          EBAY_APP_ID: ${{ secrets.EBAY_APP_ID }}
+          EBAY_CERT_ID: ${{ secrets.EBAY_CERT_ID }}
+          EBAY_DEV_ID: ${{ secrets.EBAY_DEV_ID }}
+          EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
+          PROCURO_SENHA: ${{ secrets.PROCURO_SENHA }}
+        run: |
+          if (-not $env:PROCURO_SENHA) { Write-Host "Sem PROCURO_SENHA: a pagina privada nao e gerada."; exit 0 }
+          .\procuro.ps1 -Saida procuro.html
+
       - name: Guardar o estado (novos, caches do Discogs, paginas)
         shell: bash
         run: |
           git config user.name "45recordsauction-bot"
           git config user.email "actions@users.noreply.github.com"
-          for f in vistos.json discogs-cache.json discogs-discos.json lista-observados.json index.html loja.html; do
+          for f in vistos.json discogs-cache.json discogs-discos.json lista-observados.json index.html loja.html procuro.html; do
             if [ -f "$f" ]; then git add "$f"; fi
           done
           git commit -m "Atualizacao automatica" || echo "Nada para guardar"
@@ -110,6 +128,7 @@ jobs:
           mkdir -p _site
           cp index.html _site/index.html
           if [ -f loja.html ]; then cp loja.html _site/loja.html; fi
+          if [ -f procuro.html ]; then cp procuro.html _site/procuro.html; fi
           cp CNAME _site/CNAME
 
       - uses: actions/configure-pages@v5
