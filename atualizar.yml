@@ -1,0 +1,139 @@
+# Atualiza 45recordsauction.com e publica no GitHub Pages.
+# Paginas: index.html (leiloes do eBay) e loja.html (discos a venda no Discogs).
+# Corre sozinho: duas vezes por dia, e tambem sempre que se carrega um ficheiro no repositorio.
+#  - carregou leiloes.ps1 ou config.json (ou e a hora marcada / Run workflow): pesquisa completa no eBay;
+#  - carregou so a pagina (modelo.html), os seguidores (observadores.json), a loja, o logo...:
+#    versao rapida - refaz a pagina com os leiloes que ja la estao, sem gastar pedidos ao eBay.
+# As chaves ficam em Settings > Secrets and variables > Actions (nunca no repositorio).
+name: Atualizar 45recordsauction.com
+
+on:
+  schedule:
+    - cron: '0 8 * * *'     # 08:00 UTC: depois de o eBay renovar o limite diario (meia-noite na California)
+    - cron: '0 17 * * *'    # e as 17:00 UTC (18:00 em Portugal no verao, 17:00 no inverno)
+  workflow_dispatch:         # botao "Run workflow" para correr a mao (pesquisa completa)
+  push:                      # ao carregar ficheiros (as gravacoes do proprio robot nao disparam isto)
+    branches: [main]
+    paths:
+      - 'leiloes.ps1'
+      - 'config.json'
+      - 'modelo.html'
+      - 'observadores.json'
+      - 'refazer.ps1'
+      - 'loja.ps1'
+      - 'modelo-loja.html'
+      - 'player.gif'
+      - 'index.html'
+      - 'procuro.ps1'
+      - 'modelo-procuro.html'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: windows-latest
+    timeout-minutes: 300
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decidir (pesquisa completa ou versao rapida)
+        id: modo
+        shell: bash
+        run: |
+          modo=completo
+          if [ "${{ github.event_name }}" = "push" ]; then
+            mudou=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" 2>/dev/null || echo "leiloes.ps1")
+            echo "Ficheiros carregados: $mudou"
+            if ! echo "$mudou" | grep -qE '^(leiloes\.ps1|config\.json)$'; then modo=rapido; fi
+          fi
+          echo "Modo: $modo"
+          echo "modo=$modo" >> "$GITHUB_OUTPUT"
+
+      - name: Procurar leiloes e gerar a pagina
+        if: steps.modo.outputs.modo == 'completo'
+        shell: powershell
+        env:
+          EBAY_APP_ID: ${{ secrets.EBAY_APP_ID }}
+          EBAY_CERT_ID: ${{ secrets.EBAY_CERT_ID }}
+          EBAY_DEV_ID: ${{ secrets.EBAY_DEV_ID }}
+          EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
+          DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
+        run: |
+          if (-not $env:EBAY_APP_ID) { Write-Host "Ainda sem chaves do eBay: publica a pagina atual."; exit 0 }
+          @(
+            "EBAY_APP_ID=$env:EBAY_APP_ID", "EBAY_CERT_ID=$env:EBAY_CERT_ID", "EBAY_DEV_ID=$env:EBAY_DEV_ID",
+            "EBAY_USER_TOKEN=$env:EBAY_USER_TOKEN", "DISCOGS_TOKEN=$env:DISCOGS_TOKEN"
+          ) | Set-Content -Path chaves.env -Encoding ascii
+          .\leiloes.ps1 -Saida index.html
+          Remove-Item chaves.env
+
+      - name: Refazer a pagina (versao rapida, sem pesquisar o eBay)
+        if: steps.modo.outputs.modo == 'rapido'
+        shell: powershell
+        run: |
+          .\refazer.ps1 -Pagina index.html
+
+      # a loja nao impede a publicacao dos leiloes: se falhar, fica a loja anterior
+      - name: Gerar a loja (discos a venda no Discogs)
+        shell: powershell
+        continue-on-error: true
+        env:
+          DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
+        run: |
+          .\loja.ps1 -Saida loja.html
+
+      # pagina privada (pesquisas guardadas do eBay, encriptada com a palavra-passe PROCURO_SENHA);
+      # so nas pesquisas completas. Se falhar, fica a anterior.
+      - name: Gerar a pagina privada (pesquisas guardadas)
+        if: steps.modo.outputs.modo == 'completo'
+        shell: powershell
+        continue-on-error: true
+        env:
+          EBAY_APP_ID: ${{ secrets.EBAY_APP_ID }}
+          EBAY_CERT_ID: ${{ secrets.EBAY_CERT_ID }}
+          EBAY_DEV_ID: ${{ secrets.EBAY_DEV_ID }}
+          EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
+          PROCURO_SENHA: ${{ secrets.PROCURO_SENHA }}
+        run: |
+          if (-not $env:PROCURO_SENHA) { Write-Host "Sem PROCURO_SENHA: a pagina privada nao e gerada."; exit 0 }
+          .\procuro.ps1 -Saida procuro.html
+
+      - name: Guardar o estado (novos, caches do Discogs, paginas)
+        shell: bash
+        run: |
+          git config user.name "45recordsauction-bot"
+          git config user.email "actions@users.noreply.github.com"
+          for f in vistos.json discogs-cache.json discogs-discos.json lista-observados.json index.html loja.html procuro.html; do
+            if [ -f "$f" ]; then git add "$f"; fi
+          done
+          git commit -m "Atualizacao automatica" || echo "Nada para guardar"
+          git pull --rebase || echo "Pull falhou"
+          git push || echo "Push falhou"
+
+      - name: Preparar o site (so as paginas e o dominio)
+        shell: bash
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+          if [ -f loja.html ]; then cp loja.html _site/loja.html; fi
+          if [ -f procuro.html ]; then cp procuro.html _site/procuro.html; fi
+          cp CNAME _site/CNAME
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4
