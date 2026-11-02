@@ -52,14 +52,18 @@ jobs:
         id: modo
         shell: bash
         run: |
-          modo=completo
+          modo=completo; privada=sim
           if [ "${{ github.event_name }}" = "push" ]; then
             mudou=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" 2>/dev/null || echo "leiloes.ps1")
             echo "Ficheiros carregados: $mudou"
             if ! echo "$mudou" | grep -qE '^(leiloes\.ps1|config\.json)$'; then modo=rapido; fi
+            # a pagina privada refaz as pesquisas sempre que muda o seu programa (procuro.ps1)
+            if [ "$modo" = "rapido" ] && ! echo "$mudou" | grep -qE '^procuro\.ps1$'; then privada=nao; fi
           fi
           echo "Modo: $modo"
+          echo "Pagina privada: $privada"
           echo "modo=$modo" >> "$GITHUB_OUTPUT"
+          echo "privada=$privada" >> "$GITHUB_OUTPUT"
 
       - name: Procurar leiloes e gerar a pagina
         if: steps.modo.outputs.modo == 'completo'
@@ -97,7 +101,7 @@ jobs:
       # pagina privada (pesquisas guardadas do eBay, encriptada com a palavra-passe PROCURO_SENHA);
       # so nas pesquisas completas. Se falhar, fica a anterior.
       - name: Gerar a pagina privada (pesquisas guardadas)
-        if: steps.modo.outputs.modo == 'completo'
+        if: steps.modo.outputs.privada == 'sim'
         shell: powershell
         continue-on-error: true
         env:
