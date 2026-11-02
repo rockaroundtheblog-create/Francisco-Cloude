@@ -43,11 +43,13 @@ h1 .sub{display:block;font-size:.42em;color:var(--laranja);letter-spacing:.06em;
 
 /* navegacao entre as duas paginas (leiloes / loja) */
 header{margin-bottom:14px}
-.nav{display:flex;justify-content:center;gap:10px;margin:0 0 18px}
+.nav{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:0 0 18px}
 .nav a{font-family:var(--display);font-size:16px;letter-spacing:.04em;text-decoration:none;color:var(--creme);border:2px solid var(--creme);border-radius:999px;padding:5px 18px}
 /* leiloes do eBay = petroleo; a minha loja = laranja (as duas paginas distinguem-se pela cor) */
 .nav a.n-leiloes[aria-current="page"]{background:var(--petroleo);border-color:var(--petroleo)}
 .nav a.n-loja{border-color:var(--laranja);color:var(--laranja)}
+.nav a.n-privado{border-color:#b48ce0;color:#b48ce0}
+.nav a.n-privado:hover{background:rgba(180,140,224,.15)}
 .nav a:hover{background:rgba(238,241,220,.1)}
 .nav a.n-leiloes[aria-current="page"]:hover{background:var(--petroleo)}
 .aviso{max-width:760px;margin:-6px auto 18px;text-align:center;font-size:13.5px;color:var(--nevoa)}
@@ -187,6 +189,7 @@ input[type=search]::placeholder{color:var(--nevoa)}
   <nav class="nav" aria-label="Pages">
     <a href="index.html" class="n-leiloes" aria-current="page">eBay Auctions</a>
     <a href="loja.html" class="n-loja">My Shop</a>
+    <a href="procuro.html" class="n-privado" title="Private page (password)">&#128274; Private</a>
   </nav>
   <p class="aviso"><span class="etq">eBay</span>Auctions listed on eBay by <b>other sellers</b> — these are not my records. Each photo opens the auction on eBay, where bids and purchases happen.</p>
   <div id="banners"></div>
