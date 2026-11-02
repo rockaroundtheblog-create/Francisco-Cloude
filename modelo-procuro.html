@@ -29,7 +29,14 @@ header{display:flex;align-items:center;gap:18px;flex-wrap:wrap;border:2px solid 
 h1{font-family:var(--display);font-weight:400;font-size:clamp(26px,5.4vw,42px);line-height:1;margin:0}
 h1 .n{color:var(--laranja)}
 h1 .sub{display:block;font-size:.42em;color:var(--roxo);letter-spacing:.06em;margin-top:6px}
-/* entrada com palavra-passe */
+.nav{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin:0 0 18px}
+.nav a{font-family:var(--display);font-size:16px;letter-spacing:.04em;text-decoration:none;color:var(--creme);border:2px solid var(--creme);border-radius:999px;padding:5px 18px}
+.nav a.n-leiloes{border-color:var(--petroleo);color:var(--petroleo)}
+.nav a.n-loja{border-color:var(--laranja);color:var(--laranja)}
+.nav a.n-privado{border-color:var(--roxo);color:var(--roxo)}
+.nav a[aria-current="page"]{background:var(--roxo);color:#000}
+.nav a:hover{background:rgba(238,241,220,.1)}
+.nav a[aria-current="page"]:hover{background:var(--roxo)}/* entrada com palavra-passe */
 .porta{max-width:380px;margin:40px auto;border:2px solid var(--roxo);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:12px;text-align:center}
 .porta h2{margin:0;font-family:var(--display);font-weight:400;font-size:20px;color:var(--roxo)}
 .porta p{margin:0;font-size:13.5px;color:var(--nevoa)}
@@ -67,6 +74,11 @@ select option{background:#111}
 .small{font-size:12px;color:var(--nevoa)}
 .left{font-size:12px;font-weight:600;color:var(--petroleo)}
 .left.soon{color:var(--laranja)}
+.resumo{text-align:center;color:var(--nevoa);font-size:14px;margin:-4px 0 14px}
+.resumo b{color:var(--creme)}
+#pesquisa{max-width:100%}
+.busca{font-size:11.5px;color:var(--roxo);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mais{grid-column:1/-1;display:flex;justify-content:center;padding:18px 0}
 .empty{grid-column:1/-1;padding:28px;text-align:center;color:var(--nevoa)}
 .rodape{margin-top:30px;padding-top:14px;border-top:1px solid #3b3a33;text-align:center;font-size:12px;color:var(--nevoa)}
 .rodape button{font:inherit;font-size:12px;color:var(--pele);background:none;border:0;text-decoration:underline;cursor:pointer}
@@ -78,7 +90,11 @@ select option{background:#111}
     <img class="logo" src="player.gif" alt="" width="205" height="257">
     <h1><span class="n">45</span> Records<span class="sub">Wanted · my saved eBay searches (private)</span></h1>
   </header>
-  <form class="porta" id="porta">
+  <nav class="nav" aria-label="Pages">
+    <a href="index.html" class="n-leiloes">eBay Auctions</a>
+    <a href="loja.html" class="n-loja">My Shop</a>
+    <a href="procuro.html" class="n-privado" aria-current="page">&#128274; Private</a>
+  </nav>  <form class="porta" id="porta">
     <h2>Private page</h2>
     <p>Enter the password to see the results of my saved eBay searches.</p>
     <input type="password" id="senha" autocomplete="current-password" aria-label="Password" required>
@@ -87,8 +103,9 @@ select option{background:#111}
     <div class="erro" id="erro" role="alert"></div>
   </form>
   <main id="conteudo" hidden>
-    <div class="tabs" id="tabs"></div>
+    <p class="resumo" id="resumo"></p>
     <div class="bar">
+      <select id="pesquisa" aria-label="Saved search"></select>
       <span class="info" id="info"></span>
       <select id="tipo" aria-label="Type">
         <option value="">Auctions &amp; Buy It Now</option>
@@ -97,8 +114,8 @@ select option{background:#111}
       </select>
       <input type="search" id="filtro" placeholder="Filter by title…" aria-label="Filter by title">
       <select id="ordem" aria-label="Sort">
-        <option value="novo">Newly listed</option>
         <option value="fim">Ending soonest</option>
+        <option value="novo">Newly listed</option>
         <option value="precoAsc">Lowest price</option>
         <option value="precoDesc">Highest price</option>
       </select>
@@ -110,7 +127,7 @@ select option{background:#111}
 <script>
 const C=/*CIFRA*/null;
 const $=id=>document.getElementById(id);
-let D=null, sel=0;
+let D=null, sel="", mostrarN=60; const POR_PAGINA=60;
 const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 async function abrir(senha){
   const enc=new TextEncoder();
@@ -137,26 +154,46 @@ let nomes=null;try{nomes=new Intl.DisplayNames(["en"],{type:"region"})}catch{}
 const pais=c=>{if(!c)return"";try{return nomes?nomes.of(c):c}catch{return c}};
 function falta(fim){if(!fim)return null;const ms=new Date(fim)-Date.now();if(ms<=0)return null;const m=Math.floor(ms/6e4),d=Math.floor(m/1440),h=Math.floor(m%1440/60);
   return{txt:(d?`${d}d ${h}h`:h?`${h}h ${m%60}m`:`${m%60}m`)+" left",soon:ms<6*36e5}}
+// todas as pesquisas numa so grelha (como a pagina dos leiloes); um anuncio que aparece em varias
+// pesquisas aparece uma vez, com os nomes das pesquisas juntos
+const vivo=i=>i.tipo!=="leilao"||!i.fim||new Date(i.fim)>Date.now();
+function todos(){
+  const m=new Map();
+  for(const p of D.pesquisas)for(const i of p.itens){if(!vivo(i))continue;const j=m.get(i.id);if(j){if(!j._ps.includes(p.nome))j._ps.push(p.nome)}else m.set(i.id,{...i,_ps:[p.nome]})}
+  return[...m.values()];
+}
 function mostrar(){
   $("gerado").textContent=new Date(D.gerado).toLocaleString("en-GB",{dateStyle:"medium",timeStyle:"short"});
-  const T=$("tabs");T.innerHTML="";
-  D.pesquisas.forEach((p,k)=>{const b=document.createElement("button");b.type="button";b.className="tab";b.setAttribute("aria-pressed",k===sel);
-    b.append(p.nome);const s=document.createElement("small");s.textContent=vivos(p).length;b.append(s);b.onclick=()=>{sel=k;mostrar()};T.append(b)});
+  const all=todos();
+  const cont=D.pesquisas.map(p=>[p.nome,p.itens.filter(vivo).length,p.url]);
+  const com=cont.filter(c=>c[1]>0);
+  $("resumo").innerHTML="";const r=$("resumo");
+  const b1=document.createElement("b");b1.textContent=all.length;r.append(b1," records found by ");
+  const b2=document.createElement("b");b2.textContent=com.length;r.append(b2,` of my ${cont.length} saved searches`);
+  const S=$("pesquisa");S.innerHTML="";
+  S.append(new Option(`All searches (${all.length})`,""));
+  com.sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).forEach(([n,c])=>S.append(new Option(`${n} (${c})`,n)));
+  S.value=sel;
   lista();
 }
-const vivos=p=>p.itens.filter(i=>i.tipo!=="leilao"||!i.fim||new Date(i.fim)>Date.now());
 function lista(){
-  const p=D.pesquisas[sel];const L=$("list");L.innerHTML="";
-  if(!p){L.innerHTML='<div class="empty">No saved searches yet.</div>';return}
-  const inf=$("info");inf.textContent="";const a=Object.assign(document.createElement("a"),{href:p.url,target:"_blank",rel:"noopener"});a.textContent="Open this search on eBay";inf.append(a);
+  const L=$("list");L.innerHTML="";
+  const inf=$("info");inf.textContent="";
+  if(sel){const p=D.pesquisas.find(x=>x.nome===sel);if(p&&p.url){const a=Object.assign(document.createElement("a"),{href:p.url,target:"_blank",rel:"noopener"});a.textContent="Open this search on eBay";inf.append(a)}}
   const f=$("filtro").value.trim().toLowerCase(),tp=$("tipo").value,o=$("ordem").value;
-  let it=vivos(p).filter(i=>(!tp||i.tipo===tp)&&(!f||i.titulo.toLowerCase().includes(f)));
+  let it=todos().filter(i=>(!sel||i._ps.includes(sel))&&(!tp||i.tipo===tp)&&(!f||i.titulo.toLowerCase().includes(f)));
   const fimMs=i=>i.fim&&i.tipo==="leilao"?new Date(i.fim).getTime():Infinity;
-  it.sort(o==="fim"?(a,b)=>fimMs(a)-fimMs(b):o==="precoAsc"?(a,b)=>emEuros(a)-emEuros(b):o==="precoDesc"?(a,b)=>emEuros(b)-emEuros(a):(a,b)=>new Date(b.posto||0)-new Date(a.posto||0));
-  if(!it.length){L.innerHTML='<div class="empty">Nothing found for this search right now.</div>';return}
-  for(const i of it)L.append(cartao(i));
-}
-function cartao(i){
+  it.sort(o==="fim"?(a,b)=>fimMs(a)-fimMs(b)||new Date(b.posto||0)-new Date(a.posto||0):o==="precoAsc"?(a,b)=>emEuros(a)-emEuros(b):o==="precoDesc"?(a,b)=>emEuros(b)-emEuros(a):(a,b)=>new Date(b.posto||0)-new Date(a.posto||0));
+  if(!it.length){L.innerHTML='<div class="empty">Nothing found right now.</div>';return}
+  const total=it.length;
+  for(const i of it.slice(0,mostrarN))L.append(cartao(i));
+  if(total>mostrarN){
+    const d=document.createElement("div");d.className="mais";
+    const b=document.createElement("button");b.type="button";b.className="tab";b.textContent=`Show more (${total-mostrarN} left)`;
+    b.onclick=()=>{mostrarN+=POR_PAGINA;lista()};d.append(b);L.append(d);
+    try{const ob=new IntersectionObserver(([e])=>{if(e.isIntersecting){ob.disconnect();b.click()}},{rootMargin:"400px"});ob.observe(d)}catch{}
+  }
+}function cartao(i){
   const c=document.createElement("div");c.className="card";
   const a=Object.assign(document.createElement("a"),{className:"photo",href:i.url,target:"_blank",rel:"noopener",title:i.titulo});
   a.append(i.img?Object.assign(document.createElement("img"),{src:i.img,alt:i.titulo,loading:"lazy"}):Object.assign(document.createElement("div"),{className:"ph"}));
@@ -171,10 +208,12 @@ function cartao(i){
   r.append(pr,bd);inf.append(t,r);
   const fl=falta(i.fim);if(i.tipo==="leilao"&&fl){const l=document.createElement("div");l.className="left"+(fl.soon?" soon":"");l.textContent=fl.txt;inf.append(l)}
   const o=document.createElement("div");o.className="small";o.textContent=[pais(i.pais),i.site].filter(Boolean).join(" · ");inf.append(o);
+  if(i._ps){const s=document.createElement("div");s.className="busca";s.textContent="🔎 "+i._ps.join(" · ");s.title=s.textContent;inf.append(s)}
   c.append(a,inf);return c;
 }
-["tipo","ordem"].forEach(id=>$(id).addEventListener("change",lista));
-$("filtro").addEventListener("input",lista);
+["tipo","ordem"].forEach(id=>$(id).addEventListener("change",()=>{mostrarN=POR_PAGINA;lista()}));
+$("pesquisa").addEventListener("change",()=>{sel=$("pesquisa").value;mostrarN=POR_PAGINA;lista()});
+$("filtro").addEventListener("input",()=>{mostrarN=POR_PAGINA;lista()});
 if(!C){$("erro").textContent="This page is the template. Run procuro.ps1 to build procuro.html."}
 else{let s=null;try{s=localStorage.getItem("w45:s")}catch{};if(s){$("lembrar").checked=true;entrar(s,true)}}
 </script>

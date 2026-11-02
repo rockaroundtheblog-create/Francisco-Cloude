@@ -37,3 +37,19 @@ $logo = Join-Path $dir 'player.gif'
 if (Test-Path $logo) { $modelo = $modelo.Replace('src="player.gif"', 'src="data:image/gif;base64,' + [Convert]::ToBase64String([IO.File]::ReadAllBytes($logo)) + '"') }
 [IO.File]::WriteAllText($ficheiro, $modelo.Replace('/*DADOS*/null', $novoJson), $utf8)
 Write-Host "Pagina refeita (sem pesquisar o eBay): $ficheiro"
+
+# pagina privada: so muda o aspeto (modelo-procuro.html); os dados encriptados ficam os mesmos
+$privada = Join-Path $dir 'procuro.html'
+$modeloPriv = Join-Path $dir 'modelo-procuro.html'
+if ((Test-Path $privada) -and (Test-Path $modeloPriv)) {
+    $hp = Ler-Texto $privada
+    $a = $hp.IndexOf('const C=')
+    if ($a -ge 0) {
+        $b = $hp.IndexOf(';', $a)
+        $cifra = $hp.Substring($a + 8, $b - $a - 8)
+        $mp = Ler-Texto $modeloPriv
+        if (Test-Path $logo) { $mp = $mp.Replace('src="player.gif"', 'src="data:image/gif;base64,' + [Convert]::ToBase64String([IO.File]::ReadAllBytes($logo)) + '"') }
+        [IO.File]::WriteAllText($privada, $mp.Replace('/*CIFRA*/null', $cifra), $utf8)
+        Write-Host "Pagina privada refeita com o modelo novo: $privada"
+    }
+}

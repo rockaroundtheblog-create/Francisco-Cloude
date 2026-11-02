@@ -32,13 +32,15 @@ h1 .marca{font-size:31px;color:var(--petroleo);white-space:nowrap}
 @media (max-width:560px){h1 .marca{font-size:.74em}}
 h1 .sub{display:block;font-size:.42em;color:var(--laranja);letter-spacing:.06em;margin-top:6px}
 /* navegacao entre as duas paginas */
-.nav{display:flex;justify-content:center;gap:10px;margin:0 0 18px}
+.nav{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:0 0 18px}
 .nav a{font-family:var(--display);font-size:16px;letter-spacing:.04em;text-decoration:none;color:var(--creme);border:2px solid var(--creme);border-radius:999px;padding:5px 18px}
 .nav a.n-leiloes{border-color:var(--petroleo);color:var(--petroleo)}
 .nav a[aria-current="page"]{background:var(--laranja);border-color:var(--laranja);color:var(--creme)}
 .aviso{max-width:760px;margin:-6px auto 16px;text-align:center;font-size:13.5px;color:var(--nevoa)}
 .aviso b{color:var(--creme)}
 .aviso .etq{display:inline-block;font-family:var(--display);font-size:12px;letter-spacing:.06em;background:var(--laranja);color:#000;border-radius:5px;padding:0 7px;margin-right:8px;vertical-align:1px}
+.nav a.n-privado{border-color:#b48ce0;color:#b48ce0}
+.nav a.n-privado:hover{background:rgba(180,140,224,.15)}
 .nav a:hover{background:rgba(238,241,220,.1)}
 .nav a[aria-current="page"]:hover{background:var(--laranja)}
 .vend{text-align:center;font-size:13.5px;color:var(--nevoa);margin:-8px 0 16px}
@@ -98,6 +100,7 @@ details.envio pre{white-space:pre-wrap;font:13px/1.55 var(--mono);color:var(--cr
   <nav class="nav" aria-label="Pages">
     <a href="index.html" class="n-leiloes">eBay Auctions</a>
     <a href="loja.html" class="n-loja" aria-current="page">My Shop</a>
+    <a href="procuro.html" class="n-privado" title="Private page (password)">&#128274; Private</a>
   </nav>
   <p class="aviso"><span class="etq">Mine</span>My own records for sale — <b>sold and shipped by me</b> from Portugal through Discogs. Each photo opens the record on Discogs.</p>
   <div class="vend" id="vend"></div>
