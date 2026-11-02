@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="color-scheme" content="only light">
+<title>45 Records · Wanted</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One+SC&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Pagina privada: resultados das pesquisas guardadas no eBay. Os dados vem encriptados (AES-256-CBC + HMAC-SHA256,
+   chave PBKDF2-SHA256 a partir da palavra-passe) e so sao desencriptados neste browser. */
+:root{
+  --creme:#eef1dc; --nevoa:#b8b39d; --laranja:#e5743a; --petroleo:#1f9d98; --pele:#f1e49c; --roxo:#b48ce0;
+  --display:"Bowlby One SC","Arial Black",Impact,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  color-scheme:dark;
+}
+html{background:#000;color-scheme:dark}
+@media (prefers-color-scheme:dark){html,body{background-color:#000;color:#eef1dc}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;color:var(--creme);font:15px/1.5 var(--body);background-color:#000;
+  background-image:radial-gradient(rgba(238,241,220,.06) 1px,transparent 1.3px);background-size:6px 6px;background-attachment:fixed}
+.wrap{max-width:1000px;margin:0 auto;padding:28px 16px 48px}
+header{display:flex;align-items:center;gap:18px;flex-wrap:wrap;border:2px solid #3b3a33;border-radius:28px 34px 30px 26px;padding:16px 22px;margin-bottom:18px}
+.logo{height:96px;width:auto;max-width:100%}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(26px,5.4vw,42px);line-height:1;margin:0}
+h1 .n{color:var(--laranja)}
+h1 .sub{display:block;font-size:.42em;color:var(--roxo);letter-spacing:.06em;margin-top:6px}
+/* entrada com palavra-passe */
+.porta{max-width:380px;margin:40px auto;border:2px solid var(--roxo);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:12px;text-align:center}
+.porta h2{margin:0;font-family:var(--display);font-weight:400;font-size:20px;color:var(--roxo)}
+.porta p{margin:0;font-size:13.5px;color:var(--nevoa)}
+.porta input[type=password]{font:inherit;font-size:16px;color:var(--creme);background:#000;border:2px solid var(--creme);border-radius:10px;padding:8px 12px}
+.porta label{font-size:13px;color:var(--nevoa);display:flex;gap:6px;align-items:center;justify-content:center}
+.porta button{font-family:var(--display);font-size:16px;letter-spacing:.04em;color:#000;background:var(--roxo);border:0;border-radius:999px;padding:8px 18px;cursor:pointer}
+.porta .erro{color:var(--laranja);font-size:13.5px;min-height:1.2em}
+:focus-visible{outline:3px solid var(--laranja);outline-offset:2px}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:0 0 14px}
+.tab{font:inherit;font-size:14px;font-weight:600;border:2px solid var(--creme);background:transparent;color:var(--creme);border-radius:999px;padding:4px 13px;cursor:pointer}
+.tab:hover{background:rgba(238,241,220,.1)}
+.tab[aria-pressed="true"]{background:var(--roxo);border-color:var(--roxo);color:#000}
+.tab small{margin-left:4px;font-variant-numeric:tabular-nums;color:var(--laranja)}
+.tab[aria-pressed="true"] small{color:#000}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end;margin-bottom:16px}
+.bar .info{margin-right:auto;font-size:13px;color:var(--nevoa)}
+.bar .info a{color:var(--pele)}
+select,input[type=search]{font:inherit;font-size:14px;color:var(--creme);background:#000;border:2px solid var(--creme);border-radius:8px;padding:5px 9px}
+select option{background:#111}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
+.card{display:flex;flex-direction:column;border:2px solid #3b3a33;border-radius:14px;overflow:hidden;min-width:0}
+.photo{position:relative;display:block;aspect-ratio:1;background:#1a1918;border-bottom:2px solid #3b3a33}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.ph{width:100%;height:100%;background:radial-gradient(circle,var(--creme) 0 8%,var(--roxo) 9% 32%,#120909 33% 100%)}
+.badge{position:absolute;top:8px;left:8px;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:1px 6px;border-radius:4px;color:#000}
+.badge.leilao{background:var(--petroleo)}
+.badge.compra{background:var(--pele)}
+.badge.novo{left:auto;right:8px;background:var(--laranja);color:var(--creme)}
+.info2{padding:9px 11px 11px;display:flex;flex-direction:column;gap:2px}
+.tit{font-size:12.5px;line-height:1.35;font-weight:500;color:var(--creme);text-decoration:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tit:hover{color:var(--pele)}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-top:4px}
+.price{font-family:var(--mono);font-weight:600;font-size:15px;color:var(--laranja)}
+.price .orig{font-family:var(--body);font-weight:400;font-size:11px;color:var(--nevoa)}
+.small{font-size:12px;color:var(--nevoa)}
+.left{font-size:12px;font-weight:600;color:var(--petroleo)}
+.left.soon{color:var(--laranja)}
+.empty{grid-column:1/-1;padding:28px;text-align:center;color:var(--nevoa)}
+.rodape{margin-top:30px;padding-top:14px;border-top:1px solid #3b3a33;text-align:center;font-size:12px;color:var(--nevoa)}
+.rodape button{font:inherit;font-size:12px;color:var(--pele);background:none;border:0;text-decoration:underline;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img class="logo" src="player.gif" alt="" width="205" height="257">
+    <h1><span class="n">45</span> Records<span class="sub">Wanted · my saved eBay searches (private)</span></h1>
+  </header>
+  <form class="porta" id="porta">
+    <h2>Private page</h2>
+    <p>Enter the password to see the results of my saved eBay searches.</p>
+    <input type="password" id="senha" autocomplete="current-password" aria-label="Password" required>
+    <label><input type="checkbox" id="lembrar"> Remember on this device</label>
+    <button type="submit">Open</button>
+    <div class="erro" id="erro" role="alert"></div>
+  </form>
+  <main id="conteudo" hidden>
+    <div class="tabs" id="tabs"></div>
+    <div class="bar">
+      <span class="info" id="info"></span>
+      <select id="tipo" aria-label="Type">
+        <option value="">Auctions &amp; Buy It Now</option>
+        <option value="leilao">Auctions only</option>
+        <option value="compra">Buy It Now only</option>
+      </select>
+      <input type="search" id="filtro" placeholder="Filter by title…" aria-label="Filter by title">
+      <select id="ordem" aria-label="Sort">
+        <option value="novo">Newly listed</option>
+        <option value="fim">Ending soonest</option>
+        <option value="precoAsc">Lowest price</option>
+        <option value="precoDesc">Highest price</option>
+      </select>
+    </div>
+    <div class="grid" id="list"></div>
+    <footer class="rodape">Updated <span id="gerado"></span> · <button type="button" id="sair">Lock this page</button></footer>
+  </main>
+</div>
+<script>
+const C=/*CIFRA*/null;
+const $=id=>document.getElementById(id);
+let D=null, sel=0;
+const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function abrir(senha){
+  const enc=new TextEncoder();
+  const base=await crypto.subtle.importKey("raw",enc.encode(senha),"PBKDF2",false,["deriveBits"]);
+  const bits=new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",salt:b64(C.sal),iterations:C.voltas,hash:"SHA-256"},base,512));
+  const kAes=await crypto.subtle.importKey("raw",bits.slice(0,32),"AES-CBC",false,["decrypt"]);
+  const kMac=await crypto.subtle.importKey("raw",bits.slice(32),{name:"HMAC",hash:"SHA-256"},false,["verify"]);
+  const iv=b64(C.iv),dados=b64(C.dados),junto=new Uint8Array(iv.length+dados.length);junto.set(iv);junto.set(dados,iv.length);
+  if(!await crypto.subtle.verify("HMAC",kMac,b64(C.mac),junto))throw new Error("senha");
+  const claro=await crypto.subtle.decrypt({name:"AES-CBC",iv},kAes,dados);
+  return JSON.parse(new TextDecoder().decode(claro));
+}
+async function entrar(senha,lembrar){
+  $("erro").textContent="Opening…";
+  try{D=await abrir(senha)}catch(e){$("erro").textContent=e.message==="senha"?"Wrong password.":"This browser cannot open the page.";try{localStorage.removeItem("w45:s")}catch{};return}
+  if(lembrar){try{localStorage.setItem("w45:s",senha)}catch{}}
+  $("porta").hidden=true;$("conteudo").hidden=false;mostrar();
+}
+$("porta").addEventListener("submit",e=>{e.preventDefault();entrar($("senha").value,$("lembrar").checked)});
+$("sair").onclick=()=>{try{localStorage.removeItem("w45:s")}catch{};location.reload()};
+const money=(v,c)=>{try{return new Intl.NumberFormat("en-GB",{style:"currency",currency:c||"EUR"}).format(v)}catch{return v+" "+c}};
+const emEuros=i=>{if(!i.moeda||i.moeda==="EUR")return i.preco;const t=D.cambio&&D.cambio[i.moeda];return t?i.preco/t:i.preco};
+let nomes=null;try{nomes=new Intl.DisplayNames(["en"],{type:"region"})}catch{}
+const pais=c=>{if(!c)return"";try{return nomes?nomes.of(c):c}catch{return c}};
+function falta(fim){if(!fim)return null;const ms=new Date(fim)-Date.now();if(ms<=0)return null;const m=Math.floor(ms/6e4),d=Math.floor(m/1440),h=Math.floor(m%1440/60);
+  return{txt:(d?`${d}d ${h}h`:h?`${h}h ${m%60}m`:`${m%60}m`)+" left",soon:ms<6*36e5}}
+function mostrar(){
+  $("gerado").textContent=new Date(D.gerado).toLocaleString("en-GB",{dateStyle:"medium",timeStyle:"short"});
+  const T=$("tabs");T.innerHTML="";
+  D.pesquisas.forEach((p,k)=>{const b=document.createElement("button");b.type="button";b.className="tab";b.setAttribute("aria-pressed",k===sel);
+    b.append(p.nome);const s=document.createElement("small");s.textContent=vivos(p).length;b.append(s);b.onclick=()=>{sel=k;mostrar()};T.append(b)});
+  lista();
+}
+const vivos=p=>p.itens.filter(i=>i.tipo!=="leilao"||!i.fim||new Date(i.fim)>Date.now());
+function lista(){
+  const p=D.pesquisas[sel];const L=$("list");L.innerHTML="";
+  if(!p){L.innerHTML='<div class="empty">No saved searches yet.</div>';return}
+  const inf=$("info");inf.textContent="";const a=Object.assign(document.createElement("a"),{href:p.url,target:"_blank",rel:"noopener"});a.textContent="Open this search on eBay";inf.append(a);
+  const f=$("filtro").value.trim().toLowerCase(),tp=$("tipo").value,o=$("ordem").value;
+  let it=vivos(p).filter(i=>(!tp||i.tipo===tp)&&(!f||i.titulo.toLowerCase().includes(f)));
+  const fimMs=i=>i.fim&&i.tipo==="leilao"?new Date(i.fim).getTime():Infinity;
+  it.sort(o==="fim"?(a,b)=>fimMs(a)-fimMs(b):o==="precoAsc"?(a,b)=>emEuros(a)-emEuros(b):o==="precoDesc"?(a,b)=>emEuros(b)-emEuros(a):(a,b)=>new Date(b.posto||0)-new Date(a.posto||0));
+  if(!it.length){L.innerHTML='<div class="empty">Nothing found for this search right now.</div>';return}
+  for(const i of it)L.append(cartao(i));
+}
+function cartao(i){
+  const c=document.createElement("div");c.className="card";
+  const a=Object.assign(document.createElement("a"),{className:"photo",href:i.url,target:"_blank",rel:"noopener",title:i.titulo});
+  a.append(i.img?Object.assign(document.createElement("img"),{src:i.img,alt:i.titulo,loading:"lazy"}):Object.assign(document.createElement("div"),{className:"ph"}));
+  const bg=document.createElement("span");bg.className="badge "+i.tipo;bg.textContent=i.tipo==="leilao"?"Auction":"Buy It Now";a.append(bg);
+  if(i.posto&&Date.now()-new Date(i.posto)<864e5){const n=document.createElement("span");n.className="badge novo";n.textContent="new";a.append(n)}
+  const inf=document.createElement("div");inf.className="info2";
+  const t=Object.assign(document.createElement("a"),{className:"tit",href:i.url,target:"_blank",rel:"noopener"});t.textContent=i.titulo;
+  const r=document.createElement("div");r.className="row";
+  const pr=document.createElement("span");pr.className="price";pr.textContent=money(emEuros(i),"EUR");
+  if(i.moeda&&i.moeda!=="EUR"){const o=document.createElement("span");o.className="orig";o.textContent=" ("+money(i.preco,i.moeda)+")";pr.append(o)}
+  const bd=document.createElement("span");bd.className="small";bd.textContent=i.tipo==="leilao"?(i.licitacoes===1?"1 bid":(i.licitacoes||0)+" bids"):"";
+  r.append(pr,bd);inf.append(t,r);
+  const fl=falta(i.fim);if(i.tipo==="leilao"&&fl){const l=document.createElement("div");l.className="left"+(fl.soon?" soon":"");l.textContent=fl.txt;inf.append(l)}
+  const o=document.createElement("div");o.className="small";o.textContent=[pais(i.pais),i.site].filter(Boolean).join(" · ");inf.append(o);
+  c.append(a,inf);return c;
+}
+["tipo","ordem"].forEach(id=>$(id).addEventListener("change",lista));
+$("filtro").addEventListener("input",lista);
+if(!C){$("erro").textContent="This page is the template. Run procuro.ps1 to build procuro.html."}
+else{let s=null;try{s=localStorage.getItem("w45:s")}catch{};if(s){$("lembrar").checked=true;entrar(s,true)}}
+</script>
+</body>
+</html>
