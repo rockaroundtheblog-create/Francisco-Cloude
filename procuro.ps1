@@ -84,7 +84,9 @@ if ($Demo) {
         $url = [string]$fs.SearchQuery
         $p = @{}; if ($url) { try { $p = Ler-Url $url } catch {} }
         $q = [string]$fs.QueryKeywords; if (-not $q) { $q = $p['_nkw'] }
-        $cat = [string]$fs.CategoryID; if (-not $cat) { $cat = $p['_sacat'] }; if ($cat -eq '0') { $cat = '' }
+        # so discos de vinil: categoria Music > Vinyl Records (176985), seja qual for a da pesquisa guardada
+        # (sem isto vinham livros, postais, etc. com o mesmo nome)
+        $cat = '176985'
         $tipo = [string]$fs.ItemType
         if (-not $tipo) { $tipo = if ($p['LH_Auction'] -eq '1') { 'AuctionsOnly' } elseif ($p['LH_BIN'] -eq '1') { 'FixedPricedItem' } else { 'All' } }
         $mercado = 'EBAY_US'; if ($p['_host'] -and $dominioMercado.ContainsKey($p['_host'])) { $mercado = $dominioMercado[$p['_host']] }
