@@ -99,7 +99,45 @@ if ($Demo) {
 }
 Write-Host "Pesquisas guardadas: $($pesquisas.Count)"
 
+# Palavras de uma pesquisa do eBay -> regra para o titulo. Sintaxe do eBay:
+#   palavras soltas = todas obrigatorias; "frase exata"; (a,b,c) = uma delas; -palavra = proibida.
+function Normalizar($s) {
+    $x = ([string]$s).ToLowerInvariant().Normalize([Text.NormalizationForm]::FormD)
+    $x = -join ($x.ToCharArray() | Where-Object { [Globalization.CharUnicodeInfo]::GetUnicodeCategory($_) -ne 'NonSpacingMark' })
+    $x = $x -replace ("['" + [char]0x2019 + [char]0x2018 + ']'), ''
+    ' ' + (($x -replace '[^\p{L}\p{N}]+', ' ').Trim()) + ' '
+}
+function Regra-Pesquisa($q) {
+    $todas = @(); $grupos = @(); $nao = @()
+    $resto = [string]$q
+    foreach ($m in [regex]::Matches($resto, '-?\(([^)]*)\)')) {
+        $opcoes = @(($m.Groups[1].Value -split ',') | ForEach-Object { (Normalizar $_).Trim() } | Where-Object { $_ })
+        if ($m.Value.StartsWith('-')) { $nao += $opcoes } elseif ($opcoes.Count) { $grupos += , $opcoes }
+    }
+    $resto = [regex]::Replace($resto, '-?\([^)]*\)', ' ')
+    foreach ($m in [regex]::Matches($resto, '-?"([^"]*)"')) {
+        $fr = (Normalizar $m.Groups[1].Value).Trim()
+        if ($fr) { if ($m.Value.StartsWith('-')) { $nao += $fr } else { $todas += $fr } }
+    }
+    $resto = [regex]::Replace($resto, '-?"[^"]*"', ' ')
+    foreach ($w in ($resto -split '\s+')) {
+        if (-not $w) { continue }
+        if ($w.StartsWith('-')) { $x = (Normalizar $w.Substring(1)).Trim(); if ($x) { $nao += $x } }
+        else { foreach ($p in ((Normalizar $w).Trim() -split ' ')) { if ($p) { $todas += $p } } }
+    }
+    [pscustomobject]@{ todas = $todas; grupos = $grupos; nao = $nao }
+}
+# a palavra tem de estar no titulo como palavra (ou no inicio de uma: "girl" apanha "girls")
+function Tem-Palavra($tn, $p) { $tn.Contains(' ' + $p + ' ') -or $tn.Contains(' ' + $p) }
+function Titulo-Condiz($titulo, $regra) {
+    $tn = Normalizar $titulo
+    foreach ($p in $regra.todas) { if (-not (Tem-Palavra $tn $p)) { return $false } }
+    foreach ($g in $regra.grupos) { if (@($g | Where-Object { Tem-Palavra $tn $_ }).Count -eq 0) { return $false } }
+    foreach ($p in $regra.nao) { if (Tem-Palavra $tn $p) { return $false } }
+    return $true
+}
 # --- 2) correr cada pesquisa (Browse API) ---
+$reNaoDisco = '(?i)\b(t-?shirts?|tee\s*shirt|shirts?|hoodie|sweat\s*shirt|jumper|sweater|blouse|paperback|hardcover|hardback|book\s+by|postcards?|posters?|tin\s+sign|metal\s+sign|enamel\s+sign|magazine|comic|annual\s+19\d\d|mug|keyring|key\s*chain|sticker|patch|badge|pin\s*badge|dvd|blu-?ray|cassette|cd\b|mtg|magic\s+the\s+gathering|trading\s+cards?|pokemon|yu-?gi-?oh|card\s+game)'
 $resultado = @(); $erros = @()
 if (-not $Demo) { $token = Obter-Token }
 foreach ($ps in $pesquisas) {
@@ -114,6 +152,7 @@ foreach ($ps in $pesquisas) {
                     fim = $(if ($leilao) { (Get-Date).ToUniversalTime().AddHours($rnd.Next(2, 150)).ToString('yyyy-MM-ddTHH:mm:ssZ') } else { $null }); pais = 'US'; site = 'ebay.com' }
             }
         } else {
+            $regra = Regra-Pesquisa $ps.q; $fora = 0
             $filtros = @()
             switch ($ps.tipo) { 'AuctionsOnly' { $filtros += 'buyingOptions:{AUCTION}' } 'FixedPricedItem' { $filtros += 'buyingOptions:{FIXED_PRICE}' } default { $filtros += 'buyingOptions:{AUCTION|FIXED_PRICE}' } }
             if ($ps.min -or $ps.max) { $filtros += "price:[$($ps.min)..$($ps.max)]" }
@@ -126,6 +165,10 @@ foreach ($ps in $pesquisas) {
             $r = Pedir-Json $url $h
             foreach ($s in @($r.itemSummaries)) {
                 if (-not $s) { continue }
+                # seguranca extra (anuncios postos na categoria errada): roupa, livros, cartazes, latas...
+                if ([string]$s.title -match $reNaoDisco) { continue }
+                # o titulo tem de ter as palavras da pesquisa (como no site do eBay; a API tambem apanha a descricao)
+                if (-not (Titulo-Condiz $s.title $regra)) { $fora++; continue }
                 $leilao = @($s.buyingOptions) -contains 'AUCTION'
                 $preco = $s.currentBidPrice; if (-not $preco) { $preco = $s.price }
                 $img = $null; if ($s.image) { $img = $s.image.imageUrl -replace 's-l\d+\.', 's-l500.' }
@@ -141,7 +184,7 @@ foreach ($ps in $pesquisas) {
         }
     } catch { $erros += "$($ps.nome): $($_.Exception.Message)"; Write-Warning $erros[-1] }
     $resultado += [ordered]@{ nome = $ps.nome; url = $ps.url; tipo = $ps.tipo; itens = @($itens) }
-    Write-Host "  $($ps.nome): $($itens.Count)"
+    Write-Host "  $($ps.nome): $($itens.Count)$(if ($fora) { " (fora: $fora sem as palavras no titulo)" })"
 }
 
 # cambio do dia (BCE), para mostrar tudo em euros
