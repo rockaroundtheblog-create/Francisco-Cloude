@@ -71,7 +71,7 @@ function Ler-Url($url) {
 }
 
 # --- 1) as pesquisas guardadas ---
-$pesquisas = @()
+$pesquisas = @(); $semPalavras = @()
 if ($Demo) {
     $pesquisas = @(
         [pscustomobject]@{ nome = 'Sonics 45'; q = 'sonics 45'; cat = '176985'; tipo = 'All'; min = $null; max = $null; mercado = 'EBAY_US'; url = 'https://www.ebay.com/sch/i.html?_nkw=sonics+45' },
@@ -93,11 +93,14 @@ if ($Demo) {
         $min = $fs.MinPrice; if (-not $min) { $min = $p['_udlo'] }
         $max = $fs.MaxPrice; if (-not $max) { $max = $p['_udhi'] }
         $nome = [string]$fs.SearchName; if (-not $nome) { $nome = $q }
-        if (-not $q -and -not $cat) { continue }
-        $pesquisas += [pscustomobject]@{ nome = $nome; q = $q; cat = $cat; tipo = $tipo; min = $min; max = $max; mercado = $mercado; url = $url }
+        # vendedor (pesquisas "so deste vendedor": _ssn=nome)
+        $vend = [string]$p['_ssn']
+        # sem palavras nao ha disco procurado (ex.: "plattenrille-city" = todo o stock de um vendedor): fica de fora
+        if (-not $q) { $semPalavras += $nome; continue }
+        $pesquisas += [pscustomobject]@{ nome = $nome; q = $q; cat = $cat; tipo = $tipo; min = $min; max = $max; mercado = $mercado; url = $url; vend = $vend }
     }
 }
-Write-Host "Pesquisas guardadas: $($pesquisas.Count)"
+Write-Host "Pesquisas guardadas: $($pesquisas.Count)$(if ($semPalavras.Count) { " (fora, sem palavras: " + ($semPalavras -join ', ') + ")" })"
 
 # Palavras de uma pesquisa do eBay -> regra para o titulo. Sintaxe do eBay:
 #   palavras soltas = todas obrigatorias; "frase exata"; (a,b,c) = uma delas; -palavra = proibida.
@@ -156,6 +159,7 @@ foreach ($ps in $pesquisas) {
             $filtros = @()
             switch ($ps.tipo) { 'AuctionsOnly' { $filtros += 'buyingOptions:{AUCTION}' } 'FixedPricedItem' { $filtros += 'buyingOptions:{FIXED_PRICE}' } default { $filtros += 'buyingOptions:{AUCTION|FIXED_PRICE}' } }
             if ($ps.min -or $ps.max) { $filtros += "price:[$($ps.min)..$($ps.max)]" }
+            if ($ps.vend) { $filtros += "sellers:{$($ps.vend)}" }
             $url = 'https://api.ebay.com/buy/browse/v1/item_summary/search?limit=200&sort=newlyListed'
             if ($ps.q) { $url += '&q=' + [Uri]::EscapeDataString($ps.q) }
             if ($ps.cat) { $url += '&category_ids=' + $ps.cat }
