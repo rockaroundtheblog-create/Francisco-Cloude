@@ -114,18 +114,7 @@ jobs:
           if (-not $env:PROCURO_SENHA) { Write-Host "Sem PROCURO_SENHA: a pagina privada nao e gerada."; exit 0 }
           .\procuro.ps1 -Saida procuro.html
 
-      - name: Guardar o estado (novos, caches do Discogs, paginas)
-        shell: bash
-        run: |
-          git config user.name "45recordsauction-bot"
-          git config user.email "actions@users.noreply.github.com"
-          for f in vistos.json discogs-cache.json discogs-discos.json lista-observados.json index.html loja.html procuro.html; do
-            if [ -f "$f" ]; then git add "$f"; fi
-          done
-          git commit -m "Atualizacao automatica" || echo "Nada para guardar"
-          git pull --rebase || echo "Pull falhou"
-          git push || echo "Push falhou"
-
+      # o site e preparado ANTES de mexer no git: publica sempre as paginas acabadas de gerar
       - name: Preparar o site (so as paginas e o dominio)
         shell: bash
         run: |
@@ -135,6 +124,20 @@ jobs:
           if [ -f procuro.html ]; then cp procuro.html _site/procuro.html; fi
           cp CNAME _site/CNAME
 
+      - name: Guardar o estado (novos, caches do Discogs, paginas)
+        shell: bash
+        run: |
+          git config user.name "45recordsauction-bot"
+          git config user.email "actions@users.noreply.github.com"
+          for f in vistos.json discogs-cache.json discogs-discos.json lista-observados.json index.html loja.html procuro.html; do
+            if [ -f "$f" ]; then git add "$f"; fi
+          done
+          git commit -m "Atualizacao automatica" || echo "Nada para guardar"
+          # se entretanto houve outra gravacao, junta-a; em caso de conflito ficam os ficheiros desta execucao
+          # (nunca ficam marcas de conflito "<<<<<<<" nos ficheiros)
+          git fetch origin main
+          git rebase -X theirs origin/main || { git rebase --abort; git merge -X ours origin/main -m "Juntar atualizacoes" || git merge --abort; }
+          git push || echo "Push falhou"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
